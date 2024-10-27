@@ -10,8 +10,11 @@ func main() {
 
 	//定义变量的三种方式
 	var i int
+	var str string
 	i = 10
 	fmt.Println("i=", i)
+	str = fmt.Sprintf("%d", i)
+	fmt.Printf("str type %T str=%q\n", str, str)
 
 	var num = 10.4
 	fmt.Println("num=", num)
