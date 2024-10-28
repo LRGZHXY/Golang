@@ -25,4 +25,28 @@ func main() {
 	//:=左侧的变量不应该是已经声明过的
 	name := "tom"
 	fmt.Println("name=", name)
+
+	//for循环
+	for i := 1; i < 10; i++ {
+		fmt.Println("hello", i)
+	}
+
+	j := 2
+	for j < 9 {
+		fmt.Println("hi~", j)
+		j++
+	}
+
+	var str2 string = "nihao,厦门！"
+	for index, val := range str2 {
+		fmt.Printf("index=%d,val=%c \n", index, val)
+	}
+
+	var id string
+	fmt.Scanln(&id)
+	fmt.Println("id=", id)
+
+	var number int
+	fmt.Scanf("%d", &number)
+	fmt.Println("number=", number)
 }
