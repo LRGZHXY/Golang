@@ -24,5 +24,4 @@ func main() {
 	fmt.Println(t3)
 	fmt.Println(t4)
 
-	//test
 }
