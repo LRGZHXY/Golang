@@ -17,7 +17,7 @@ func main() {
 
 	var t3 *Teacher = new(Teacher)
 
-	var t4 *Teacher = &Teacher{"小青", 13, "西安财经大学"}
+	var t4 *Teacher = &Teacher{"小李", 13, "西安石油大学"}
 
 	fmt.Println(t1)
 	fmt.Println(t2)
