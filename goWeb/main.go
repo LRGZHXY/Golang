@@ -1,22 +1,39 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"net/http"
-	//sqlx
-	"github.com/jmoiron/sqlx"
-	//mysql
-	_ "github.com/go-sql-driver/mysql"
+	"fmt"
+	"goWeb/logger"
+	"goWeb/settings"
+
+	"go.uber.org/zap"
 )
 
-func main() {
-	//初始化一个gin路由
-	r := gin.Default()
-	//注册路由
-	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "ok")
-	})
-	r.Run()
+//Go Web开发较通用的脚手架模版
 
-	db, err := sqlx.Connect("mysql", "user:password@tcp(localhost:3306)/dbname")
+func main() {
+	//1.加载配置
+	if err := settings.Init(); err != nil {
+		fmt.Printf("init settings failed,err:%v\n", err)
+		return
+	}
+	//2.初始化日志
+	if err := logger.Init(); err != nil {
+		fmt.Printf("init logger failed,err:%v\n", err)
+		return
+	}
+	zap.L().Debug("logger init success")
+	//3.初始化MySQL连接
+	if err := mysql.Init(); err != nil {
+		fmt.Printf("init mysql failed,err:%v\n", err)
+		return
+	}
+	//4.初始化Redis连接
+	if err := redis.Init(); err != nil {
+		fmt.Printf("init redis failed,err:%v\n", err)
+		return
+	}
+	//5.注册路由
+
+	//6.启动服务（优雅关机）
+
 }
