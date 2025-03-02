@@ -14,6 +14,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // Init初始化Logger
