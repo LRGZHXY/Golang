@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"goWeb/logger"
-	"goWeb/redis"
 	"goWeb/routes"
 	"goWeb/settings"
 	"log"
@@ -19,6 +18,7 @@ import (
 	"go.uber.org/zap"
 
 	"goWeb/dao/mysql"
+	"goWeb/dao/redis"
 )
 
 //Go Web开发较通用的脚手架模版
