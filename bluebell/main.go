@@ -1,11 +1,12 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"bluebell/logger"
+	"bluebell/pkg/snowflake"
 	"bluebell/routes"
 	"bluebell/settings"
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,11 +25,16 @@ import (
 //Go Web开发较通用的脚手架模版
 
 func main() {
-	//1.加载配置
-	if err := settings.Init(); err != nil {
-		fmt.Printf("init settings failed,err:%v\n", err)
+	if len(os.Args) < 2 {
+		fmt.Println("need config file.eg: bluebell config.yaml")
 		return
 	}
+	// 1.加载配置
+	if err := settings.Init(os.Args[1]); err != nil {
+		fmt.Printf("load config failed, err:%v\n", err)
+		return
+	}
+
 	//2.初始化日志
 	if err := logger.Init(); err != nil {
 		fmt.Printf("init logger failed,err:%v\n", err)
@@ -48,6 +54,12 @@ func main() {
 		return
 	}
 	defer redis.Close()
+
+	if err := snowflake.Init(settings.Conf.StartTime, settings.Conf.MachineID); err != nil {
+		fmt.Printf("init snowflake failed,err:%v\n", err)
+		return
+	}
+
 	//5.注册路由
 	r := routes.Setup()
 	//6.启动服务（优雅关机）
