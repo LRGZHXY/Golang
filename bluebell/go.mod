@@ -1,4 +1,4 @@
-module goWeb
+module bluebell
 
 go 1.23.2
 

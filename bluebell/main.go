@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"goWeb/logger"
-	"goWeb/routes"
-	"goWeb/settings"
+	"bluebell/logger"
+	"bluebell/routes"
+	"bluebell/settings"
 	"log"
 	"net/http"
 	"os"
@@ -17,8 +17,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"goWeb/dao/mysql"
-	"goWeb/dao/redis"
+	"bluebell/dao/mysql"
+	"bluebell/dao/redis"
 )
 
 //Go Web开发较通用的脚手架模版

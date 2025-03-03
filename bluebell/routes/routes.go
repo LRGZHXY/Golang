@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"goWeb/logger"
+	"bluebell/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
