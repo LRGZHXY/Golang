@@ -25,12 +25,12 @@ import (
 //Go Web开发较通用的脚手架模版
 
 func main() {
-	if len(os.Args) < 2 {
+	/*if len(os.Args) < 2 {
 		fmt.Println("need config file.eg: bluebell config.yaml")
 		return
-	}
+	}*/
 	// 1.加载配置
-	if err := settings.Init(os.Args[1]); err != nil {
+	if err := settings.Init(); err != nil {
 		fmt.Printf("load config failed, err:%v\n", err)
 		return
 	}
@@ -56,9 +56,14 @@ func main() {
 	defer redis.Close()
 
 	if err := snowflake.Init(settings.Conf.StartTime, settings.Conf.MachineID); err != nil {
-		fmt.Printf("init snowflake failed,err:%v\n", err)
+		fmt.Printf("init snowflake failed, err:%v\n", err)
 		return
 	}
+	// 初始化gin框架内置的校验器使用的翻译器
+	/*if err := controllers.InitTrans("zh"); err != nil {
+		fmt.Printf("init validator trans failed, err:%v\n", err)
+		return
+	}*/
 
 	//5.注册路由
 	r := routes.Setup()
