@@ -16,3 +16,22 @@
 {"level":"DEBUG","time":"2025-03-04T22:43:46.971+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
 {"level":"INFO","time":"2025-03-04T23:13:29.619+0800","caller":"bluebell/main.go:91","msg":"Shutdown Server ..."}
 {"level":"INFO","time":"2025-03-04T23:13:29.619+0800","caller":"bluebell/main.go:100","msg":"Server exiting"}
+{"level":"DEBUG","time":"2025-03-05T19:37:18.558+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-05T19:37:42.195+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-05T19:40:32.142+0800","caller":"bluebell/main.go:91","msg":"Shutdown Server ..."}
+{"level":"INFO","time":"2025-03-05T19:40:32.142+0800","caller":"bluebell/main.go:100","msg":"Server exiting"}
+{"level":"DEBUG","time":"2025-03-05T19:40:39.309+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-05T19:45:35.829+0800","caller":"bluebell/main.go:91","msg":"Shutdown Server ..."}
+{"level":"INFO","time":"2025-03-05T19:45:35.829+0800","caller":"bluebell/main.go:100","msg":"Server exiting"}
+{"level":"DEBUG","time":"2025-03-05T19:45:41.192+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-05T19:47:11.745+0800","caller":"bluebell/main.go:91","msg":"Shutdown Server ..."}
+{"level":"INFO","time":"2025-03-05T19:47:11.745+0800","caller":"bluebell/main.go:100","msg":"Server exiting"}
+{"level":"DEBUG","time":"2025-03-05T19:47:16.903+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-05T19:59:15.839+0800","caller":"bluebell/main.go:91","msg":"Shutdown Server ..."}
+{"level":"INFO","time":"2025-03-05T19:59:15.839+0800","caller":"bluebell/main.go:100","msg":"Server exiting"}
+{"level":"DEBUG","time":"2025-03-05T19:59:21.395+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-05T19:59:35.365+0800","caller":"logger/logger.go:72","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0005055}
+{"level":"DEBUG","time":"2025-03-05T21:59:07.337+0800","caller":"bluebell/main.go:44","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-05T21:59:28.235+0800","caller":"logger/logger.go:72","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0}
+{"level":"ERROR","time":"2025-03-05T21:59:37.973+0800","caller":"controllers/user.go:17","msg":"SignUp with invalid param","error":"invalid character '}' looking for beginning of object key string"}
+{"level":"INFO","time":"2025-03-05T21:59:37.973+0800","caller":"logger/logger.go:72","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0005069}
