@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bluebell/controllers"
 	"bluebell/logger"
 	"bluebell/pkg/snowflake"
 	"bluebell/routes"
@@ -59,11 +60,12 @@ func main() {
 		fmt.Printf("init snowflake failed, err:%v\n", err)
 		return
 	}
+
 	// 初始化gin框架内置的校验器使用的翻译器
-	/*if err := controllers.InitTrans("zh"); err != nil {
+	if err := controllers.InitTrans("zh"); err != nil {
 		fmt.Printf("init validator trans failed, err:%v\n", err)
 		return
-	}*/
+	}
 
 	//5.注册路由
 	r := routes.Setup()

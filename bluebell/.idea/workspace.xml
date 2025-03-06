@@ -5,14 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b240634-f038-412d-ae91-19be926c0eeb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/controllers/validator.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controllers/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/validator.go" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/validator.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dao/mysql/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/dao/mysql/user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logic/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/logic/user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/params.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/params.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings/settings.go" beforeDir="false" afterPath="$PROJECT_DIR$/settings/settings.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web_app.log" beforeDir="false" afterPath="$PROJECT_DIR$/web_app.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
