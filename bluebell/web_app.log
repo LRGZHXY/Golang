@@ -53,3 +53,13 @@
 {"level":"INFO","time":"2025-03-06T22:41:00.712+0800","caller":"logger/logger.go:72","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0005049}
 {"level":"INFO","time":"2025-03-06T22:41:54.772+0800","caller":"logger/logger.go:72","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.037888}
 {"level":"INFO","time":"2025-03-06T22:41:56.877+0800","caller":"logger/logger.go:72","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0110232}
+{"level":"DEBUG","time":"2025-03-08T20:30:38.474+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-08T20:31:25.742+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-08T20:32:07.207+0800","caller":"logger/logger.go:81","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0407623}
+{"level":"ERROR","time":"2025-03-08T20:36:36.145+0800","caller":"controllers/user.go:17","msg":"SignUp with invalid param","error":"invalid character '}' looking for beginning of object key string"}
+{"level":"INFO","time":"2025-03-08T20:36:36.145+0800","caller":"logger/logger.go:81","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0}
+{"level":"ERROR","time":"2025-03-08T20:36:44.981+0800","caller":"controllers/user.go:17","msg":"SignUp with invalid param","error":"Key: 'ParamSignUp.re_password' Error:Field validation for 're_password' failed on the 'required' tag"}
+{"level":"INFO","time":"2025-03-08T20:36:44.981+0800","caller":"logger/logger.go:81","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0}
+{"level":"DEBUG","time":"2025-03-08T20:37:03.815+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"ERROR","time":"2025-03-08T20:37:14.927+0800","caller":"controllers/user.go:17","msg":"SignUp with invalid param","error":"Key: 'ParamSignUp.re_password' Error:Field validation for 're_password' failed on the 'required' tag"}
+{"level":"INFO","time":"2025-03-08T20:37:14.927+0800","caller":"logger/logger.go:81","msg":"/signup","status":200,"method":"POST","path":"/signup","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0005058}
