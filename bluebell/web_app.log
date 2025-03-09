@@ -74,3 +74,8 @@
 {"level":"ERROR","time":"2025-03-08T21:42:55.852+0800","caller":"controllers/user.go:59","msg":"Login with invalid param","error":"invalid character '\"' after object key:value pair"}
 {"level":"INFO","time":"2025-03-08T21:42:55.852+0800","caller":"logger/logger.go:81","msg":"/login","status":200,"method":"POST","path":"/login","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0}
 {"level":"INFO","time":"2025-03-08T21:43:12.853+0800","caller":"logger/logger.go:81","msg":"/login","status":200,"method":"POST","path":"/login","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0005051}
+{"level":"DEBUG","time":"2025-03-09T22:33:14.506+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-09T22:33:36.490+0800","caller":"logger/logger.go:81","msg":"/login","status":200,"method":"POST","path":"/login","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0111386}
+{"level":"INFO","time":"2025-03-09T22:34:43.919+0800","caller":"logger/logger.go:81","msg":"/login","status":200,"method":"POST","path":"/login","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0012218}
+{"level":"DEBUG","time":"2025-03-09T23:10:02.983+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-09T23:13:19.776+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
