@@ -19,15 +19,18 @@ func Setup(mode string) *gin.Engine {
 	// 推荐：明确设置可信代理
 	r.SetTrustedProxies([]string{"127.0.0.1"}) // 仅信任本机代理
 
-	//注册
-	r.POST("/signup", controllers.SignUpHandler)
-	//登录
-	r.POST("/login", controllers.LoginHandler)
+	v1 := r.Group("/api/v1")
 
-	r.GET("/ping", middlewares.JWTAuthMiddleware(), func(c *gin.Context) {
-		//如果是登录的用户，判断请求头中是否有有效的JWT
-		c.String(http.StatusOK, "pong")
-	})
+	//注册
+	v1.POST("/signup", controllers.SignUpHandler)
+	//登录
+	v1.POST("/login", controllers.LoginHandler)
+
+	v1.Use(middlewares.JWTAuthMiddleware()) //应用JWT认证中间件
+
+	{
+		v1.GET("/community", controllers.CommunityHandler)
+	}
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
