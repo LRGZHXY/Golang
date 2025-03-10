@@ -91,3 +91,20 @@
 {"level":"DEBUG","time":"2025-03-10T21:15:11.418+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
 {"level":"DEBUG","time":"2025-03-10T21:17:56.127+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
 {"level":"INFO","time":"2025-03-10T21:18:09.752+0800","caller":"logger/logger.go:81","msg":"/api/v1/community","status":200,"method":"GET","path":"/api/v1/community","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0010352}
+{"level":"DEBUG","time":"2025-03-10T22:17:32.175+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-10T22:17:42.428+0800","caller":"logger/logger.go:81","msg":"/api/v1/community/1","status":200,"method":"GET","path":"/api/v1/community/1","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0026063}
+{"level":"INFO","time":"2025-03-10T22:17:57.751+0800","caller":"logger/logger.go:81","msg":"/api/v1/community/2","status":200,"method":"GET","path":"/api/v1/community/2","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0006417}
+{"level":"DEBUG","time":"2025-03-10T22:26:52.541+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:27:20.316+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:28:07.959+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:32:19.397+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:32:45.301+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:33:39.361+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:34:48.051+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:35:12.300+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:35:17.430+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:38:02.204+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:39:33.512+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:40:07.985+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:40:51.775+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-10T22:46:53.974+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
