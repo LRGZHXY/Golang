@@ -71,6 +71,6 @@ func GetPostListHandler(c *gin.Context) {
 		ResponseError(c, CodeServerBusy)
 		return
 	}
-	ResponseSuccess(c, data)
 	//返回响应
+	ResponseSuccess(c, data)
 }
