@@ -108,3 +108,11 @@
 {"level":"DEBUG","time":"2025-03-10T22:40:07.985+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
 {"level":"DEBUG","time":"2025-03-10T22:40:51.775+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
 {"level":"DEBUG","time":"2025-03-10T22:46:53.974+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-11T13:34:52.485+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-11T13:38:59.099+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-11T13:39:16.809+0800","caller":"logger/logger.go:81","msg":"/api/v1/post","status":200,"method":"POST","path":"/api/v1/post","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0}
+{"level":"DEBUG","time":"2025-03-11T13:41:50.409+0800","caller":"bluebell/main.go:45","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-11T13:42:42.836+0800","caller":"logger/logger.go:81","msg":"/api/v1/post","status":200,"method":"POST","path":"/api/v1/post","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0005041}
+{"level":"INFO","time":"2025-03-11T13:48:35.162+0800","caller":"logger/logger.go:81","msg":"/api/v1/login","status":200,"method":"POST","path":"/api/v1/login","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0279461}
+{"level":"INFO","time":"2025-03-11T13:50:05.964+0800","caller":"logger/logger.go:81","msg":"/api/v1/login","status":200,"method":"POST","path":"/api/v1/login","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.000505}
+{"level":"INFO","time":"2025-03-11T13:50:31.750+0800","caller":"logger/logger.go:81","msg":"/api/v1/post","status":200,"method":"POST","path":"/api/v1/post","query":"","ip":"127.0.0.1","user-agent":"PostmanRuntime/7.43.0","errors":"","cost":0.0175447}
