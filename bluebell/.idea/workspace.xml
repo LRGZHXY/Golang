@@ -5,9 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b240634-f038-412d-ae91-19be926c0eeb" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/controllers/vote.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dao/redis/keys.go" beforeDir="false" afterPath="$PROJECT_DIR$/dao/redis/keys.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/response.go" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/response.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logic/vote.go" beforeDir="false" afterPath="$PROJECT_DIR$/logic/vote.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/params.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/params.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/routes.go" beforeDir="false" afterPath="$PROJECT_DIR$/routes/routes.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp/build-errors.log" beforeDir="false" afterPath="$PROJECT_DIR$/tmp/build-errors.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmp/main.exe" beforeDir="false" afterPath="$PROJECT_DIR$/tmp/main.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web_app.log" beforeDir="false" afterPath="$PROJECT_DIR$/web_app.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
