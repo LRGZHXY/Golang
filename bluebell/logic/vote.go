@@ -1,27 +1,18 @@
 package logic
 
-import "bluebell/models"
+import (
+	"bluebell/dao/redis"
+	"bluebell/models"
+	"strconv"
 
-//投票功能
-
-/*投票的几种情况：
-direction=1：
-	1.之前没有投过票，现在投赞成票
-	2.之前投反对票，现在改为赞成票
-direction=0：
-	1.之前投赞成票，现在取消投票
-	2.之前投反对票，现在取消投票
-direction=-1：
-	1.之前没有投过票，现在投反对票
-	2.之前投赞成票，现在改为反对票
-
-投票的限制：
-每个帖子自发表之日起一个星期之内允许用户投票，超过一个星期不允许投票
-	1.到期之后将redis中保存的赞成票及反对票存储到mysql表中
-	2.到期之后删除 KeyPostVotedZSetPF
-*/
+	"go.uber.org/zap"
+)
 
 // VoteForPost 为帖子投票的函数
-func VoteForPost(userID int64, p *models.ParamVoteData) {
-
+func VoteForPost(userID int64, p *models.ParamVoteData) error {
+	zap.L().Debug("VoteForPost",
+		zap.Int64("userID", userID),
+		zap.String("postID", p.PostID),
+		zap.Int8("direction", p.Direction))
+	return redis.VoteForPost(strconv.Itoa(int(userID)), p.PostID, float64(p.Direction))
 }
