@@ -1,0 +1,4 @@
+{"level":"DEBUG","time":"2025-03-17T21:33:35.793+0800","caller":"douyin/main.go:36","msg":"logger init success"}
+{"level":"DEBUG","time":"2025-03-17T21:34:00.523+0800","caller":"douyin/main.go:36","msg":"logger init success"}
+{"level":"INFO","time":"2025-03-17T21:34:33.247+0800","caller":"douyin/main.go:72","msg":"Shutdown Server ..."}
+{"level":"INFO","time":"2025-03-17T21:34:33.248+0800","caller":"douyin/main.go:81","msg":"Server exiting"}
