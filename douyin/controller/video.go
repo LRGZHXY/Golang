@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// GetVideoHandler 获取视频id
 func GetVideoHandler(c *gin.Context) {
 	//1.获取参数和请求校验
 	//从url中获取page的值
