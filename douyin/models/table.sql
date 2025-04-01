@@ -17,3 +17,10 @@ values
     ('7478923098792758538'),
     ('7475328298248178984'),
     ('7473432757239057722');
+
+create table `user`(
+    id varchar(6) primary key,
+    nickname varchar(255) unique not null,
+    password varchar(255) not null,
+    email varchar(255) unique not null
+);
