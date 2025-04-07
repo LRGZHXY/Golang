@@ -1,0 +1,23 @@
+{
+  "code": 200,
+  "router": "/api/v1/douyin/app/v3/fetch_user_like_videos",
+  "params": {
+    "sec_user_id": "MS4wLjABAAAANXSltcLCzDGmdNFI2Q_QixVTr67NiYzjKOIP5s03CAE",
+    "max_cursor": "0",
+    "counts": "20"
+  },
+  "data": {
+    "sec_uid": "MS4wLjABAAAANXSltcLCzDGmdNFI2Q_QixVTr67NiYzjKOIP5s03CAE",
+    "status_code": 0,
+    "aweme_list": null,
+    "uid": "92163827336",
+    "extra": {
+      "now": 1743648752000,
+      "logid": "2025040310523223C1A8E700B9A34E8358",
+      "fatal_item_ids": null
+    },
+    "log_pb": {
+      "impr_id": "2025040310523223C1A8E700B9A34E8358"
+    }
+  }
+}
