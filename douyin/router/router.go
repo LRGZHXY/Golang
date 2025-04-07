@@ -3,6 +3,7 @@ package router
 import (
 	"douyin/controller"
 	"douyin/extra/userinfo"
+	"douyin/extra/videoid"
 	"douyin/logger"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -33,6 +34,8 @@ func Setup(mode string) *gin.Engine {
 	v1.GET("/fetch_user_like_videos", userinfo.FetchUserLikeVideos)
 	//返回用户主页数据
 	v1.GET("/fetch_user_page_videos", userinfo.FetchUserPageVideos)
+	//返回视频信息
+	v1.GET("/videoID/:id", videoid.GetVideoId)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

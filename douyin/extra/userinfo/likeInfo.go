@@ -50,7 +50,7 @@ func FetchUserLikeVideos(c *gin.Context) {
 	if err != nil {
 		log.Printf("打开文件失败: %v\n", err)
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "找不到该用户的数据文件111",
+			"error": "找不到该用户的数据文件",
 		})
 		return
 	}
