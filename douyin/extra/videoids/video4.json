@@ -882,11 +882,7 @@
               "data_size": 677424,
               "uri": "v0200fg10000cu74gf7og65g0b6he8tg",
               "url_list": [
-                "https://v5-hl-ws-ov-coldy.zjcdn.com/25ba4e956edbeae79aaee7ef4ff8be60/67ebf268/video/tos/cn/tos-cn-ve-15/ocE9DEgoQBnUuUA4IBcGRCFrZj2HlAfkgtAeg8/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=658&bt=658&cs=2&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4tJjswCnztR4QZgxRyqkZ&mime_type=video_mp4&qs=15&rc=ZWU3ZWU6ZDUzOzk1Ozo6NUBpajtrZWo5cmk3eDMzNGkzM0A2MF5eYS5fNTQxM141MC81YSNxYjMtMmQ0ZDRgLS1kLS9zcw%3D%3D&btag=c0008e00088008&cdn_type=1&cquery=100b_104i_103Q_103R_103S&dy_q=1743512656&feature_id=678d19b78746021745157b2e7ec5825f&l=20250401210416AEA4186A0FDB1315E924&pdp=online_xy&pwid=1&req_cdn_type=r",
-                "https://v5-dy-o-detect.zjcdn.com/79a516b0da2a850146d2489b97d305be/67ebf268/video/tos/cn/tos-cn-ve-15/ocE9DEgoQBnUuUA4IBcGRCFrZj2HlAfkgtAeg8/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=658&bt=658&cs=2&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4tJjswCnztR4QZgxRyqkZ&mime_type=video_mp4&qs=15&rc=ZWU3ZWU6ZDUzOzk1Ozo6NUBpajtrZWo5cmk3eDMzNGkzM0A2MF5eYS5fNTQxM141MC81YSNxYjMtMmQ0ZDRgLS1kLS9zcw%3D%3D&btag=c0008e00088008&cc=44&cdn_type=1&cquery=103Q_103R_103S_100b_104i&dy_q=1743512656&feature_id=678d19b78746021745157b2e7ec5825f&l=20250401210416AEA4186A0FDB1315E924&pdp=online_xy&pwid=1&req_cdn_type=r",
-                "https://api-play.amemv.com/aweme/v1/play/?video_id=v0200fg10000cu74gf7og65g0b6he8tg&line=0&file_id=82273788a266487082ba17dbaba43b9b&sign=ba1b4266afb09d32e656ac681d88ff32&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL",
-                "https://api.amemv.com/aweme/v1/play/?video_id=v0200fg10000cu74gf7og65g0b6he8tg&line=1&file_id=82273788a266487082ba17dbaba43b9b&sign=ba1b4266afb09d32e656ac681d88ff32&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL"
-              ],
+                "https://videos-demo.oss-cn-shanghai.aliyuncs.com/go_douyin_videos/%E6%8A%96%E9%9F%B3202549-294201.mp4"],
               "url_key": "v0200fg10000cu74gf7og65g0b6he8tg_bytevc1_1440p_674641",
               "height": 1920
             }
@@ -964,11 +960,7 @@
           "file_hash": "ca0d57ffc88a150ec52ddcf4c8a33808",
           "url_key": "v0200fg10000cu74gf7og65g0b6he8tg_h264_540p_728458",
           "url_list": [
-            "https://v5-hl-ws-ov-coldy.zjcdn.com/ae5d26152d24d17675b6f8c50da3e02f/67ebf268/video/tos/cn/tos-cn-ve-15/ooARBBgPEI5sp7GQBs5eCL5H4GeeCJgAjZcRzA/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=711&bt=711&cs=0&ds=6&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4tJjswCnztR4QZgxRyqkZ&mime_type=video_mp4&qs=0&rc=ZztoZWVoZGRpZWZkODo8aUBpajtrZWo5cmk3eDMzNGkzM0BhYDRhYS5eNjExMTUyMzYwYSNxYjMtMmQ0ZDRgLS1kLS9zcw%3D%3D&btag=c0010e00088008&cdn_type=2&cquery=103S_100b_104i_103Q_103R&dy_q=1743512656&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=20250401210416AEA4186A0FDB1315E924&pwid=1&req_cdn_type=r",
-            "https://v5-dy-o-detect.zjcdn.com/d4032eac5684da9ce73601280ba1b27c/67ebf268/video/tos/cn/tos-cn-ve-15/ooARBBgPEI5sp7GQBs5eCL5H4GeeCJgAjZcRzA/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=711&bt=711&cs=0&ds=6&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4tJjswCnztR4QZgxRyqkZ&mime_type=video_mp4&qs=0&rc=ZztoZWVoZGRpZWZkODo8aUBpajtrZWo5cmk3eDMzNGkzM0BhYDRhYS5eNjExMTUyMzYwYSNxYjMtMmQ0ZDRgLS1kLS9zcw%3D%3D&btag=c0010e00088008&cc=44&cdn_type=2&cquery=103Q_103R_103S_100b_104i&dy_q=1743512656&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=20250401210416AEA4186A0FDB1315E924&pwid=1&req_cdn_type=r",
-            "https://api-play.amemv.com/aweme/v1/play/?video_id=v0200fg10000cu74gf7og65g0b6he8tg&line=0&file_id=3f9967558a4c4b4f9aaa1edbdb7ec8dd&sign=ca0d57ffc88a150ec52ddcf4c8a33808&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL",
-            "https://api.amemv.com/aweme/v1/play/?video_id=v0200fg10000cu74gf7og65g0b6he8tg&line=1&file_id=3f9967558a4c4b4f9aaa1edbdb7ec8dd&sign=ca0d57ffc88a150ec52ddcf4c8a33808&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL"
-          ],
+            "https://videos-demo.oss-cn-shanghai.aliyuncs.com/go_douyin_videos/%E6%8A%96%E9%9F%B3202549-294201.mp4"],
           "height": 768,
           "file_cs": "c:0-9983-358a|d:0-365730-9f75,365731-731462-f91f|a:v0200fg10000cu74gf7og65g0b6he8tg",
           "uri": "v0200fg10000cu74gf7og65g0b6he8tg"

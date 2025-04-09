@@ -584,11 +584,7 @@
           "file_hash": "b5d915090cfd5fcaabdbd607adeddc76",
           "uri": "v1e00fgi0000cutgpivog65hubk64fag",
           "url_list": [
-            "https://v5-dy-o-detect.zjcdn.com/1cf514961a5ac1b042723163bcc7cf05/67ebf256/video/tos/cn/tos-cn-ve-15c000-ce/owyIDTGXQLAmIeCdqgI8FJBCJHhwe7G2P63Vge/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=633&bt=633&cs=2&ds=6&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4gGjswCnztFpQZgxRyqkZ&mime_type=video_mp4&qs=0&rc=ZDs6NDxnaWY2Zjw4ZTNnaUBpamk5ZWs5cmxqeDMzbGkzNEBhMC5gXmA0Nl8xYjAzMi5hYSNeMWhyMmRzbXFgLS1kLWJzcw%3D%3D&btag=80008e00088008&cc=44&cdn_type=1&cquery=103Q_103R_103S_100b_104i&dy_q=1743512633&feature_id=6877e3de2a5b940f3744aded9a737d81&l=202504012103534415C496B77324164EE2&pdp=online_xy&pwid=1&req_cdn_type=r",
-            "https://v5-hl-ws-ov-coldy.zjcdn.com/bfe215040593fea26744f738638d82f3/67ebf256/video/tos/cn/tos-cn-ve-15c000-ce/owyIDTGXQLAmIeCdqgI8FJBCJHhwe7G2P63Vge/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=633&bt=633&cs=2&ds=6&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4gGjswCnztFpQZgxRyqkZ&mime_type=video_mp4&qs=0&rc=ZDs6NDxnaWY2Zjw4ZTNnaUBpamk5ZWs5cmxqeDMzbGkzNEBhMC5gXmA0Nl8xYjAzMi5hYSNeMWhyMmRzbXFgLS1kLWJzcw%3D%3D&btag=80008e00088008&cdn_type=1&cquery=103Q_103R_103S_100b_104i&dy_q=1743512633&feature_id=6877e3de2a5b940f3744aded9a737d81&l=202504012103534415C496B77324164EE2&pdp=online_xy&pwid=1&req_cdn_type=r",
-            "https://api-play-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cutgpivog65hubk64fag&line=0&file_id=df1d506b35e94cb39c7fcda9c11738da&sign=b5d915090cfd5fcaabdbd607adeddc76&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL",
-            "https://api-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cutgpivog65hubk64fag&line=1&file_id=df1d506b35e94cb39c7fcda9c11738da&sign=b5d915090cfd5fcaabdbd607adeddc76&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL"
-          ],
+            "https://videos-demo.oss-cn-shanghai.aliyuncs.com/go_douyin_videos/%E6%8A%96%E9%9F%B3202549-286710.mp4"],
           "url_key": "v1e00fgi0000cutgpivog65hubk64fag_bytevc1_540p_648709",
           "width": 576
         },
@@ -599,11 +595,7 @@
         "play_addr": {
           "uri": "v1e00fgi0000cutgpivog65hubk64fag",
           "url_list": [
-            "https://v5-dy-o-detect.zjcdn.com/85387504340e607160933eab2e8916e4/67ebf256/video/tos/cn/tos-cn-ve-15c000-ce/o8PeQ7eBAGIGIgKHqTGCeLEHmJ8lXI6y7hdGrg/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2181&bt=2181&cs=0&ds=6&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4gGjswCnztFpQZgxRyqkZ&mime_type=video_mp4&qs=0&rc=N2RkOGg2PDdoaTY3ZDVkNUBpamk5ZWs5cmxqeDMzbGkzNEBfLmNgYzY1XjMxMzFgLWI1YSNeMWhyMmRzbXFgLS1kLWJzcw%3D%3D&btag=80010e00088008&cc=44&cdn_type=2&cquery=104i_103Q_103R_103S_100b&dy_q=1743512633&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=202504012103534415C496B77324164EE2&pwid=1&req_cdn_type=r",
-            "https://v5-hl-ws-ov-coldy.zjcdn.com/716386c1991fb2bb40695f8be2412cfe/67ebf256/video/tos/cn/tos-cn-ve-15c000-ce/o8PeQ7eBAGIGIgKHqTGCeLEHmJ8lXI6y7hdGrg/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2181&bt=2181&cs=0&ds=6&ft=M0yB1zNBd95~~iSYsiI9B4yoFIKrHgSFS4gGjswCnztFpQZgxRyqkZ&mime_type=video_mp4&qs=0&rc=N2RkOGg2PDdoaTY3ZDVkNUBpamk5ZWs5cmxqeDMzbGkzNEBfLmNgYzY1XjMxMzFgLWI1YSNeMWhyMmRzbXFgLS1kLWJzcw%3D%3D&btag=80010e00088008&cdn_type=2&cquery=104i_103Q_103R_103S_100b&dy_q=1743512633&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=202504012103534415C496B77324164EE2&pwid=1&req_cdn_type=r",
-            "https://api-play-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cutgpivog65hubk64fag&line=0&file_id=82ea02ca44634f6ea48993fec5fa1ab4&sign=5c492fc774d4c59e4e4160a61f664ac4&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL",
-            "https://api-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cutgpivog65hubk64fag&line=1&file_id=82ea02ca44634f6ea48993fec5fa1ab4&sign=5c492fc774d4c59e4e4160a61f664ac4&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL"
-          ],
+            "https://videos-demo.oss-cn-shanghai.aliyuncs.com/go_douyin_videos/%E6%8A%96%E9%9F%B3202549-286710.mp4"],
           "url_key": "v1e00fgi0000cutgpivog65hubk64fag_h264_540p_2233666",
           "width": 576,
           "file_hash": "5c492fc774d4c59e4e4160a61f664ac4",

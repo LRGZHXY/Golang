@@ -1164,11 +1164,7 @@
             "bit_rate": 781411,
             "play_addr": {
               "url_list": [
-                "https://v5-dy-o-abtest.zjcdn.com/0e6eaf940c9e3ae16f231e9fa926646e/67ebf4d9/video/tos/cn/tos-cn-ve-15c000-ce/oABFJBgg8XAX0Qkzue7Htj8fZUMMJCeRJDGPwP/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=763&bt=763&cs=2&ds=4&ft=tKyhWzoTd95~~iSYsiI9B4yoFIKrHgSFS4iGjswCnzv6K3ytxRyqkZ&mime_type=video_mp4&qs=15&rc=PDg0ZTs0NWZpNDU1OjM7ZEBpams4NHc5cjNseTMzbGkzNEBgL2NiLmNiNTAxYmFjMC81YSNyMXJrMmQ0MjBgLS1kLWJzcw%3D%3D&btag=c0010e000b8009&cc=46&cdn_type=2&cquery=104i_103Q_103R_103S_100b&dy_q=1743512611&feature_id=68018ede21ce804c33c78a142dc64480&l=20250401210331220845C7F447B5157002&pwid=1&req_cdn_type=r",
-                "https://v5-dy-o-abtest.zjcdn.com/0e6eaf940c9e3ae16f231e9fa926646e/67ebf4d9/video/tos/cn/tos-cn-ve-15c000-ce/oABFJBgg8XAX0Qkzue7Htj8fZUMMJCeRJDGPwP/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=763&bt=763&cs=2&ds=4&ft=tKyhWzoTd95~~iSYsiI9B4yoFIKrHgSFS4iGjswCnzv6K3ytxRyqkZ&mime_type=video_mp4&qs=15&rc=PDg0ZTs0NWZpNDU1OjM7ZEBpams4NHc5cjNseTMzbGkzNEBgL2NiLmNiNTAxYmFjMC81YSNyMXJrMmQ0MjBgLS1kLWJzcw%3D%3D&btag=c0010e000b8009&cc=46&cdn_type=2&cquery=103S_100b_104i_103Q_103R&dy_q=1743512611&feature_id=68018ede21ce804c33c78a142dc64480&l=20250401210331220845C7F447B5157002&pwid=1&req_cdn_type=r",
-                "https://api-play-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cv3i507og65tn1u54hug&line=0&file_id=8a2830f7d2e2413f8ce2f118ebf125c9&sign=04948fc9bafcba38d1823b36e35c38d2&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL",
-                "https://api-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cv3i507og65tn1u54hug&line=1&file_id=8a2830f7d2e2413f8ce2f118ebf125c9&sign=04948fc9bafcba38d1823b36e35c38d2&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL"
-              ],
+                "https://videos-demo.oss-cn-shanghai.aliyuncs.com/go_douyin_videos/%E6%8A%96%E9%9F%B3202549-069428.mp4"],
               "url_key": "v1e00fgi0000cv3i507og65tn1u54hug_bytevc1_1080p_781411",
               "height": 1920,
               "width": 1080,
@@ -1268,11 +1264,7 @@
         "bit_rate_audio": null,
         "play_addr": {
           "url_list": [
-            "https://v5-dy-o-abtest.zjcdn.com/7b8c4aecba9c513e90419263e009e72d/67ebf4d9/video/tos/cn/tos-cn-ve-15c000-ce/ocPHSiZRwgh9PMXRdcPuH9JAXiBA8BEiEI9ox/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1255&bt=1255&cs=0&ds=3&ft=tKyhWzoTd95~~iSYsiI9B4yoFIKrHgSFS4iGjswCnzv6K3ytxRyqkZ&mime_type=video_mp4&qs=0&rc=NTs3N2g0Ojs8aDc8PGg6NUBpams4NHc5cjNseTMzbGkzNEBhL2MxLWA2NmMxNi4wYWNhYSNyMXJrMmQ0MjBgLS1kLWJzcw%3D%3D&btag=c0010e000b8009&cc=46&cdn_type=2&cquery=103S_100b_104i_103Q_103R&dy_q=1743512611&feature_id=fea919893f650a8c49286568590446ef&l=20250401210331220845C7F447B5157002&pwid=1&req_cdn_type=r",
-            "https://v5-dy-o-abtest.zjcdn.com/7b8c4aecba9c513e90419263e009e72d/67ebf4d9/video/tos/cn/tos-cn-ve-15c000-ce/ocPHSiZRwgh9PMXRdcPuH9JAXiBA8BEiEI9ox/?a=1128&ch=26&cr=13&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1255&bt=1255&cs=0&ds=3&ft=tKyhWzoTd95~~iSYsiI9B4yoFIKrHgSFS4iGjswCnzv6K3ytxRyqkZ&mime_type=video_mp4&qs=0&rc=NTs3N2g0Ojs8aDc8PGg6NUBpams4NHc5cjNseTMzbGkzNEBhL2MxLWA2NmMxNi4wYWNhYSNyMXJrMmQ0MjBgLS1kLWJzcw%3D%3D&btag=c0010e000b8009&cc=46&cdn_type=2&cquery=103Q_103R_103S_100b_104i&dy_q=1743512611&feature_id=fea919893f650a8c49286568590446ef&l=20250401210331220845C7F447B5157002&pwid=1&req_cdn_type=r",
-            "https://api-play-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cv3i507og65tn1u54hug&line=0&file_id=d2f7de3919944ef99897c10e44f428d2&sign=a55150b0c233671a5e30906d3c7975d7&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL",
-            "https://api-hl.amemv.com/aweme/v1/play/?video_id=v1e00fgi0000cv3i507og65tn1u54hug&line=1&file_id=d2f7de3919944ef99897c10e44f428d2&sign=a55150b0c233671a5e30906d3c7975d7&is_play_url=1&source=PackSourceEnum_AWEME_DETAIL"
-          ],
+            "https://videos-demo.oss-cn-shanghai.aliyuncs.com/go_douyin_videos/%E6%8A%96%E9%9F%B3202549-069428.mp4"],
           "file_hash": "a55150b0c233671a5e30906d3c7975d7",
           "file_cs": "c:0-737757-98bb",
           "uri": "v1e00fgi0000cv3i507og65tn1u54hug",
