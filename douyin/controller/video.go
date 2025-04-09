@@ -16,8 +16,14 @@ func GetVideoHandler(c *gin.Context) {
 	if err != nil || page < 1 {
 		page = 1
 	}
+	//从url中获取limit的值
+	limitStr := c.Param("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 5 // 默认每页返回5条
+	}
 	//2.业务处理
-	videoIDs, err := logic.GetVideoList(page)
+	videoIDs, err := logic.GetVideoList(page, limit)
 	if err != nil {
 		zap.L().Error("logic.GetVideoList failed", zap.Error(err))
 		ResponseError(c, CodeServerBusy)

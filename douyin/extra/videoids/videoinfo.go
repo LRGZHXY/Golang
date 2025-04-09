@@ -1,4 +1,4 @@
-package videoid
+package videoids
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-const dataDir3 = "E:\\GoPractice\\douyin\\extra\\videoid"
+const dataDir3 = "E:\\GoPractice\\douyin\\extra\\videoids"
 
 // 定义一个映射，将 id 映射到对应的 JSON 文件
 var videoIdMap = map[string]string{

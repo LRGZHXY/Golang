@@ -2,8 +2,10 @@ package router
 
 import (
 	"douyin/controller"
+	"douyin/extra/comminfos"
+	"douyin/extra/commrep"
 	"douyin/extra/userinfo"
-	"douyin/extra/videoid"
+	"douyin/extra/videoids"
 	"douyin/logger"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -29,13 +31,17 @@ func Setup(mode string) *gin.Engine {
 	v1.POST("/login", controller.LoginHandler)
 
 	//返回视频id
-	v1.GET("/getVideo/:page", controller.GetVideoHandler)
+	v1.GET("/getVideo/:page/:limit", controller.GetVideoHandler)
 	//返回用户喜欢数据
 	v1.GET("/fetch_user_like_videos", userinfo.FetchUserLikeVideos)
 	//返回用户主页数据
 	v1.GET("/fetch_user_page_videos", userinfo.FetchUserPageVideos)
 	//返回视频信息
-	v1.GET("/videoID/:id", videoid.GetVideoId)
+	v1.GET("/videoID/:id", videoids.GetVideoId)
+	//返回评论数据
+	v1.GET("/fetch_video_comments", comminfos.FetchVideoComments)
+	//二级评论
+	v1.GET("/fetch_video_comment_replies", commrep.FetchVideoCommentReplies)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

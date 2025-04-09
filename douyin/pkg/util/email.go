@@ -37,7 +37,7 @@ func CacheVerificationCode(email string, code string) {
 		ExpiresAt time.Time
 	}{
 		Code:      code,
-		ExpiresAt: time.Now().Add(10 * time.Minute), // Cache expiration time
+		ExpiresAt: time.Now().Add(10 * time.Minute),
 	}
 }
 

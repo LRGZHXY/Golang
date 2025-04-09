@@ -1,4 +1,4 @@
-package videoid
+package comminfos
 
 import (
 	"fmt"
@@ -10,26 +10,26 @@ import (
 	"path/filepath"
 )
 
-const dataDir4 = "E:\\GoPractice\\douyin\\extra\\comminfo"
+const dataDir4 = "E:\\GoPractice\\douyin\\extra\\comminfos"
 
 // 定义一个映射，将 id 映射到对应的 JSON 文件
 var commMap = map[string]string{
-	"7482354135765880091": "com1.json",
-	"7477984552787397946": "com2.json",
-	"7474583086403980604": "com3.json",
-	"7461981146180537641": "com4.json",
-	"7481509204755369270": "com5.json",
-	"7480744910195363124": "com6.json",
+	"7482354135765880091": "comm1.json",
+	"7477984552787397946": "comm2.json",
+	"7474583086403980604": "comm3.json",
+	"7461981146180537641": "comm4.json",
+	"7481509204755369270": "comm5.json",
+	"7480744910195363124": "comm6.json",
 }
 
-func GetComInfo(c *gin.Context) {
+func FetchVideoComments(c *gin.Context) {
 	// 获取 URL 查询参数
 	awemeID := c.Query("aweme_id")
 	cursor := c.Query("cursor")
-	counts := c.Query("counts")
+	count := c.Query("count")
 
 	// 校验参数是否缺失
-	if awemeID == "" || cursor == "" || counts == "" {
+	if awemeID == "" || cursor == "" || count == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "缺少必要参数：aweme_id, cursor 或 counts",
 		})
