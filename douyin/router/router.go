@@ -43,8 +43,10 @@ func Setup(mode string) *gin.Engine {
 	v1.GET("/fetch_video_comments", comminfos.FetchVideoComments)
 	//二级评论
 	v1.GET("/fetch_video_comment_replies", commrep.FetchVideoCommentReplies)
-	//返回json数据
+	//上传视频数据
 	v1.POST("/upload", data.TranData)
+	//根据videoID获得某个视频详情
+	v1.GET("/getData/:id", data.GetDataByID)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
