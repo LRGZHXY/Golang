@@ -24,3 +24,22 @@ create table `user`(
     password varchar(255) not null,
     email varchar(255) unique not null
 );
+
+create table aweme_videos(
+    id varchar(36) primary key,
+    aweme_id varchar(64),
+    description text,
+    author_uid varchar(64),
+    author_sec_uid varchar(64),
+    author_nickname varchar(128),
+    author_avatar text,
+    music_title varchar(255),
+    music_author varchar(255),
+    music_cover text,
+    digg_count int,
+    comment_count int,
+    share_count int,
+    video_url text,
+    video_width int,
+    video_height int
+);

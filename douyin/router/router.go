@@ -4,6 +4,7 @@ import (
 	"douyin/controller"
 	"douyin/extra/comminfos"
 	"douyin/extra/commrep"
+	"douyin/extra/data"
 	"douyin/extra/userinfo"
 	"douyin/extra/videoids"
 	"douyin/logger"
@@ -42,6 +43,8 @@ func Setup(mode string) *gin.Engine {
 	v1.GET("/fetch_video_comments", comminfos.FetchVideoComments)
 	//二级评论
 	v1.GET("/fetch_video_comment_replies", commrep.FetchVideoCommentReplies)
+	//返回json数据
+	v1.POST("/upload", data.TranData)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
