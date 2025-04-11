@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gopkg.in/gomail.v2"
 	"math/rand"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -71,4 +72,9 @@ func SendVerificationCode(email string) error {
 	)
 
 	return dialer.DialAndSend(msg)
+}
+
+func IsValidEmail(email string) bool {
+	reg := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return reg.MatchString(email)
 }

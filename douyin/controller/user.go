@@ -8,20 +8,22 @@ import (
 )
 
 func SendCode(c *gin.Context) {
-	var p struct {
-		Email string `json:"email" binding:"required,email"`
+	email := c.Query("email")
+	if email == "" {
+		ResponseError(c, CodeInvalidParam)
+		return
 	}
 
-	if err := c.ShouldBindJSON(&p); err != nil {
+	if !util.IsValidEmail(email) {
 		ResponseError(c, CodeInvalidParam)
 		return
 	}
 
 	code := util.GenerateVerificationCode()
 
-	util.CacheVerificationCode(p.Email, code)
+	util.CacheVerificationCode(email, code)
 
-	if err := util.SendVerificationCode(p.Email); err != nil {
+	if err := util.SendVerificationCode(email); err != nil {
 		ResponseError(c, CodeServerBusy)
 		return
 	}
