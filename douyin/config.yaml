@@ -20,7 +20,7 @@ smtp:
   host: "smtp.qq.com"
   port: 587
   user: "3399075402@qq.com"
-  password: "qxbbaievlsvidaif"
+  password: "ujkhlutnfnwacjbi"
 redis:
   host: "127.0.0.1"
   port: 6379
