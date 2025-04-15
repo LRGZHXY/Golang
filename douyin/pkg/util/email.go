@@ -61,7 +61,7 @@ func SendVerificationCode(email string) error {
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", settings.Conf.SMTPConfig.User)
 	msg.SetHeader("To", email)
-	msg.SetHeader("Subject", "抖音账号注册验证码")
+	msg.SetHeader("Subject", "新讯视界账号注册验证码")
 	msg.SetBody("text/plain", "您的验证码是："+code)
 
 	dialer := gomail.NewDialer(

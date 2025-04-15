@@ -28,7 +28,10 @@ func SendCode(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "验证码已发送"})
+	c.JSON(http.StatusOK, gin.H{
+		"success": 1,
+		"message": "验证码已发送",
+	})
 }
 
 func SignUpHandler(c *gin.Context) {
@@ -56,7 +59,10 @@ func SignUpHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "注册成功"})
+	c.JSON(http.StatusOK, gin.H{
+		"success": 1,
+		"message": "注册成功",
+	})
 }
 
 func LoginHandler(c *gin.Context) {
@@ -76,5 +82,9 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "登录成功", "user": user})
+	c.JSON(http.StatusOK, gin.H{
+		"success": 1,
+		"message": "登录成功",
+		"user":    user,
+	})
 }
