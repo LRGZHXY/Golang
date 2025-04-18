@@ -27,7 +27,7 @@ func GetVideoId(c *gin.Context) {
 	// 从 URL 获取 id 参数
 	id := c.Param("id")
 
-	// 映射 id 到具体的 JSON 文件名
+	// 映射 id 到具体的 json 文件名
 	fileName, ok := videoIdMap[id]
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -39,7 +39,7 @@ func GetVideoId(c *gin.Context) {
 	// 构建文件路径
 	filePath := filepath.Join(dataDir3, fileName)
 
-	// 尝试打开 JSON 文件
+	// 打开对应的json文件
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Printf("打开文件失败: %v\n", err)

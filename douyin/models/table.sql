@@ -43,3 +43,4 @@ create table aweme_videos(
     video_width int,
     video_height int
 );
+
