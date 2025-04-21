@@ -1,0 +1,17 @@
+// 使用 proto3 语法
+syntax = "proto3";
+
+// 指定 Go 代码生成时的包路径
+option go_package = ".;service";
+
+service SayHello{
+  rpc SayHello(HelloRequest) returns (HelloResponse){}
+}
+
+message HelloRequest {
+  string requestName=1;
+}
+
+message HelloResponse {
+  string responseMsg=1;
+}
