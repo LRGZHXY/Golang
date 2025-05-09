@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Server 可视化实时监控
+// Server 可视化实时监控  http://localhost:5854/debug/statsviz/
 func Server(add string) error {
 	mux := http.NewServeMux()
 	if err := statsviz.Register(mux); err != nil {

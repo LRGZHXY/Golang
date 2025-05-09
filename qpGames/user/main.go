@@ -3,17 +3,20 @@ package main
 import (
 	"common/config"
 	"common/metrics"
+	"context"
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"user/app"
 )
 
-var configFile = flag.String("config", "application.yaml", "config file")
+var configFile = flag.String("config", "user/application.yaml", "config file")
 
 func main() {
 	//1.加载配置
 	flag.Parse()
 	config.InitConfig(*configFile)
-
 	//2.启动监控
 	go func() {
 		err := metrics.Server(fmt.Sprintf("0.0.0.0:%d", config.Conf.MetricPort))
@@ -22,5 +25,9 @@ func main() {
 		}
 	}()
 	//3.启动grpc服务端
-	select {}
+	err := app.Run(context.Background())
+	if err != nil {
+		log.Println(err)
+		os.Exit(-1)
+	}
 }

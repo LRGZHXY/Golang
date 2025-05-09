@@ -91,7 +91,7 @@ func InitConfig(confFile string) {
 		log.Println("配置文件修改了")
 		err := v.Unmarshal(&Conf)
 		if err != nil {
-			panic(fmt.Errorf("反序列化改变配置文件出错,err:%v \n", err))
+			panic(fmt.Errorf("Unmarshal change config data,err:%v \n", err))
 		}
 	})
 	err := v.ReadInConfig()
@@ -101,6 +101,6 @@ func InitConfig(confFile string) {
 	//解析
 	err = v.Unmarshal(&Conf)
 	if err != nil {
-		panic(fmt.Errorf("反序列化配置文件出错,err:%v \n", err))
+		panic(fmt.Errorf("Unmarshal config data,err:%v \n", err))
 	}
 }
