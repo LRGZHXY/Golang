@@ -5,6 +5,7 @@ import (
 	"common/discovery"
 	"common/logs"
 	"context"
+	"core/repo"
 	"google.golang.org/grpc"
 	"net"
 	"os"
@@ -33,6 +34,10 @@ func Run(ctx context.Context) error {
 		if err != nil {
 			logs.Fatal("user grpc server register etcd err:%v", err)
 		}
+		//注册grpc service 需要数据库 mongo redis
+		//初始化 数据库管理
+		manager := repo.New()
+
 		//阻塞操作 server.Serve() 持续监听并处理连接的死循环函数
 		err = server.Serve(lis)
 		if err != nil {
