@@ -2,10 +2,10 @@ package app
 
 import (
 	"common/config"
+	"common/discovery"
+	"common/logs"
 	"context"
-	"fmt"
 	"google.golang.org/grpc"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -15,24 +15,37 @@ import (
 
 // Run 启动程序 启动grpc服务 启动http服务 启用日志 启用数据库
 func Run(ctx context.Context) error {
-	// 启动grpc服务端
-	server := grpc.NewServer()
+	//1.做一个日志库 info error fatal debug..
+	logs.InitLog(config.Conf.AppName)
+
+	//2.创建一个新的服务注册对象register
+	register := discovery.NewRegister()
+
+	//启动grpc服务端
+	server := grpc.NewServer() //创建一个新的gRPC服务器实例server
 	go func() {
 		lis, err := net.Listen("tcp", config.Conf.Grpc.Addr)
 		if err != nil {
-			log.Fatalf("user grpc server listen err:%v", err)
+			logs.Fatal("user grpc server listen err:%v", err)
+		}
+		//将服务注册到etcd中
+		err = register.Register(config.Conf.Etcd)
+		if err != nil {
+			logs.Fatal("user grpc server register etcd err:%v", err)
 		}
 		//阻塞操作 server.Serve() 持续监听并处理连接的死循环函数
 		err = server.Serve(lis)
 		if err != nil {
-			log.Fatalf("user grpc server run failed err:%v", err)
+			logs.Fatal("user grpc server run failed err:%v", err)
 		}
 	}()
+
 	// 定义匿名函数 赋值给变量stop
 	stop := func() {
 		server.Stop()
+		register.Close()
 		time.Sleep(3 * time.Second) //暂停三秒
-		fmt.Println("stop and finish")
+		logs.Info("stop and finish")
 	}
 	// 优雅启停
 	c := make(chan os.Signal, 1) //创建一个channel,用来接收操作系统信号，缓冲区大小为1
@@ -50,11 +63,11 @@ func Run(ctx context.Context) error {
 			switch s {
 			case syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT:
 				stop()
-				log.Println("user app quit")
+				logs.Info("user app quit")
 				return nil
 			case syscall.SIGHUP:
 				stop()
-				log.Println("hang up!! user app quit")
+				logs.Info("hang up!! user app quit")
 				return nil
 			default:
 				return nil
