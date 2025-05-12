@@ -42,12 +42,16 @@ func (r *Register) bindLease(ctx context.Context, key, value string) error {
 		logs.Error("bindLease failed,err:%v", err)
 		return err
 	}
+	logs.Info("register service success,key=%s", key)
 	return nil
 }
 
 // keepAlive 心跳 续租
-func (r *Register) keepAlive(ctx context.Context) (<-chan *clientv3.LeaseKeepAliveResponse, error) {
-	keepAliveResponses, err := r.etcdCli.KeepAlive(ctx, r.leaseId)
+func (r *Register) keepAlive() (<-chan *clientv3.LeaseKeepAliveResponse, error) {
+	//注意是context.Background() 永不过期
+	//心跳 要求是一个长连接 如果做了超时 长连接就断掉了 不要设置超时
+	//就是一直不停的发消息 保持租约 续租
+	keepAliveResponses, err := r.etcdCli.KeepAlive(context.Background(), r.leaseId)
 	if err != nil {
 		logs.Error("keepAlive failed,err:%v", err)
 		return keepAliveResponses, err
@@ -58,10 +62,10 @@ func (r *Register) keepAlive(ctx context.Context) (<-chan *clientv3.LeaseKeepAli
 // watcher 监控协程
 //1.是否收到关闭信号
 //2.租约是否失效
-//3.定时检查续约状态 每ttl/3秒触发一次
+//3.定时检查续约状态 每ttl秒触发一次
 func (r *Register) watcher() {
 	//定期检查租约是否到期
-	ticker := time.NewTicker(time.Duration(r.info.Ttl/3) * time.Second) //创建一个定时器
+	ticker := time.NewTicker(time.Duration(r.info.Ttl) * time.Second) //创建一个定时器
 	for {
 		select {
 		case <-r.closeCh: //收到关闭信号
@@ -73,14 +77,18 @@ func (r *Register) watcher() {
 			if _, err := r.etcdCli.Revoke(context.Background(), r.leaseId); err != nil {
 				logs.Error("close and Revoke lease failed,err:%v", err)
 			}
+			if r.etcdCli != nil {
+				r.etcdCli.Close()
+			}
 			logs.Info("unregister etcd...")
-		case res := <-r.keepAliveChan: //收到续约信号
+		case <-r.keepAliveChan: //收到续约信号
+			//logs.Info("续约成功，%v", res)
 			//续约
-			if res == nil {
+			/*if res == nil { // "=="!!! 不然会死循环发送“user: register service success,key=/user/v1/127.0.0.1:11500”
 				if err := r.register(); err != nil {
 					logs.Error("keepAliveChan register failed,err:%v", err)
 				}
-			}
+			}*/
 		case <-ticker.C: //定时器触发
 			if r.keepAliveChan == nil {
 				if err := r.register(); err != nil {
@@ -102,7 +110,7 @@ func (r *Register) register() error {
 		return err
 	}
 	//2.开启续租（心跳）
-	if r.keepAliveChan, err = r.keepAlive(ctx); err != nil {
+	if r.keepAliveChan, err = r.keepAlive(); err != nil {
 		return err
 	}
 	//3.绑定租约

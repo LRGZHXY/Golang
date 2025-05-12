@@ -59,6 +59,7 @@ func (r Resolver) sync() error {
 		logs.Error("grpc client get etcd failed,name=%s,err:%v", r.key, err)
 		return err
 	}
+	logs.Info("%v", res.Kvs)
 	r.srvAddrList = []resolver.Address{}
 	for _, v := range res.Kvs {
 		server, err := ParseValue(v.Value) //遍历服务实例并解析
@@ -72,6 +73,7 @@ func (r Resolver) sync() error {
 		})
 	}
 	if len(r.srvAddrList) == 0 {
+		logs.Error("no services found")
 		return nil
 	}
 	err = r.cc.UpdateState(resolver.State{ //更新服务地址列表

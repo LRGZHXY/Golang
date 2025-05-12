@@ -4,6 +4,7 @@ import (
 	"common/config"
 	"common/rpc"
 	"gate/api"
+	"gate/auth"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,6 +19,7 @@ func RegisterRouter() *gin.Engine {
 	rpc.Init()
 
 	r := gin.Default()
+	r.Use(auth.Cors()) //跨域问题
 	userHandler := api.NewUserHandler()
 	r.POST("/register", userHandler.Register)
 	return r
