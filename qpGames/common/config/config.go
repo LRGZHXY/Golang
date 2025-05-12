@@ -64,8 +64,8 @@ type RedisConf struct {
 	Port         int      `mapstructure:"port"`
 }
 type EtcdConf struct {
-	Addrs       []string       `mapstructure:"addrs"`
-	RWTimeout   int            `mapstructure:"rwTimeout"`
+	Addrs       []string       `mapstructure:"addrs"`     //etcd服务器地址
+	RWTimeout   int            `mapstructure:"rwTimeout"` //读写超时时间
 	DialTimeout int            `mapstructure:"dialTimeout"`
 	Register    RegisterServer `mapstructure:"register"`
 }

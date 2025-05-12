@@ -1,0 +1,20 @@
+syntax="proto3";
+option go_package = "user/pb;pb";//指定生成的位置和包名
+
+//请求参数结构
+message RegisterParams{
+  string account = 1;
+  string password = 2;
+  int32 loginPlatform = 3;
+  string smsCode = 4;
+}
+
+//响应结果结构
+message RegisterResponse{
+  string uid = 1;
+}
+
+//定义服务接口
+service UserService{
+  rpc Register(RegisterParams) returns (RegisterResponse);
+}

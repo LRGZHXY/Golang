@@ -26,7 +26,7 @@ func Fatal(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Fatal(format)
 	} else {
-		logger.Fatalf(format, values) //会按照格式化字符串输出,支持 %v, %s, %d 等格式化占位符
+		logger.Fatalf(format, values...) //会按照格式化字符串输出,支持 %v, %s, %d 等格式化占位符
 	}
 }
 
@@ -34,7 +34,7 @@ func Info(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Info(format)
 	} else {
-		logger.Infof(format, values)
+		logger.Infof(format, values...)
 	}
 }
 
@@ -42,7 +42,7 @@ func Warn(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Warn(format)
 	} else {
-		logger.Warnf(format, values)
+		logger.Warnf(format, values...)
 	}
 }
 
@@ -50,7 +50,7 @@ func Debug(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Debug(format)
 	} else {
-		logger.Debugf(format, values)
+		logger.Debugf(format, values...)
 	}
 }
 
@@ -58,6 +58,6 @@ func Error(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Error(format)
 	} else {
-		logger.Errorf(format, values)
+		logger.Errorf(format, values...)
 	}
 }

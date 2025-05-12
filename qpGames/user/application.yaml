@@ -15,12 +15,12 @@ etcd:
     ttl: 10
 db:
   mongo:
-    url: mongodb://127.0.0.1:27018
+    url: mongodb://127.0.0.1:27017
     userName: root
-    password: root123456
+    password: 905428
     minPoolSize: 10
     maxPoolSize: 100
-    db: mschess
+    db: admin
   redis:
     addr: 127.0.0.1:6379
     poolSize: 10

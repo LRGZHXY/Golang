@@ -1,6 +1,11 @@
 package discovery
 
-import "fmt"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+)
 
 // 存储服务的基本信息
 type Server struct {
@@ -17,4 +22,32 @@ func (s Server) BuildRegisterKey() string {
 		return fmt.Sprintf("/%s/%s", s.Name, s.Addr) // /name/addr
 	}
 	return fmt.Sprintf("/%s/%s/%s", s.Name, s.Version, s.Addr) // /name/version/addr
+}
+
+// ParseValue 将JSON字符串反序列化为Server类型的对象
+func ParseValue(v []byte) (Server, error) {
+	var server Server
+	if err := json.Unmarshal(v, &server); err != nil {
+		return server, err
+	}
+	return server, nil
+}
+
+// ParseKey 从给定的Etcd键中提取name version addr
+func ParseKey(key string) (Server, error) {
+	strs := strings.Split(key, "/")
+	if len(strs) == 2 {
+		return Server{
+			Name: strs[0],
+			Addr: strs[1],
+		}, nil
+	}
+	if len(strs) == 3 {
+		return Server{
+			Name:    strs[0],
+			Version: strs[1],
+			Addr:    strs[2],
+		}, nil
+	}
+	return Server{}, errors.New("invalid key")
 }

@@ -7,7 +7,16 @@ type Manager struct {
 	Redis *database.RedisManager
 }
 
-// New 封装MongoDB和Redis管理器
+func (m *Manager) Close() {
+	if m.Mongo != nil {
+		m.Mongo.Close()
+	}
+	if m.Redis != nil {
+		m.Redis.Close()
+	}
+}
+
+// New MongoDB和Redis统一管理器
 func New() *Manager {
 	return &Manager{
 		Mongo: database.NewMongo(),

@@ -12,6 +12,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"user/internal/service"
+	"user/pb"
 )
 
 // Run 启动程序 启动grpc服务 启动http服务 启用日志 启用数据库
@@ -24,6 +26,9 @@ func Run(ctx context.Context) error {
 
 	//启动grpc服务端
 	server := grpc.NewServer() //创建一个新的gRPC服务器实例server
+	//注册grpc service 需要数据库 mongo redis
+	//初始化 数据库管理
+	manager := repo.New()
 	go func() {
 		lis, err := net.Listen("tcp", config.Conf.Grpc.Addr)
 		if err != nil {
@@ -34,10 +39,7 @@ func Run(ctx context.Context) error {
 		if err != nil {
 			logs.Fatal("user grpc server register etcd err:%v", err)
 		}
-		//注册grpc service 需要数据库 mongo redis
-		//初始化 数据库管理
-		manager := repo.New()
-
+		pb.RegisterUserServiceServer(server, service.NewAccountService(manager))
 		//阻塞操作 server.Serve() 持续监听并处理连接的死循环函数
 		err = server.Serve(lis)
 		if err != nil {
@@ -49,6 +51,7 @@ func Run(ctx context.Context) error {
 	stop := func() {
 		server.Stop()
 		register.Close()
+		manager.Close()
 		time.Sleep(3 * time.Second) //暂停三秒
 		logs.Info("stop and finish")
 	}

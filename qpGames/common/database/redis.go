@@ -68,7 +68,7 @@ func (r *RedisManager) Close() {
 	}
 }
 
-// Set 设置Redis键值对
+// Set 将键值对存入Redis
 func (r *RedisManager) Set(ctx context.Context, key, value string, expire time.Duration) error {
 	if r.ClusterCli != nil {
 		return r.ClusterCli.Set(ctx, key, value, expire).Err()
