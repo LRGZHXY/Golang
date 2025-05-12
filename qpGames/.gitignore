@@ -1,3 +1,6 @@
+# 忽略 Docker
+docker/
+
 # 忽略 etcd 数据
 docker/etcd/data/
 
@@ -6,3 +9,4 @@ docker/mongo/db/
 
 # 忽略 Redis 数据
 docker/redis/data/
+
