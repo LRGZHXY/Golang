@@ -12,12 +12,6 @@ import (
 	"os"
 )
 
-/*func main() {
-	//写一个websocket连接 客户端需要连接这个websocket
-	c := connector.Default()
-	c.Run()
-
-}*/
 var rootCmd = &cobra.Command{
 	Use:   "connector",
 	Short: "connector 管理连接，session以及路由请求",
@@ -44,12 +38,11 @@ func init() {
 }
 
 func main() {
-	//1.加载配置
 	if err := rootCmd.Execute(); err != nil { //执行命令
 		log.Println(err)
 		os.Exit(1)
 	}
-	config.InitConfig(configFile)
+	config.InitConfig(configFile) //加载配置
 	game.InitConfig(gameConfigDir)
 	//2.启动监控
 	go func() {

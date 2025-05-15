@@ -9,17 +9,17 @@ import (
 
 var (
 	websocketUpgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
+		CheckOrigin: func(r *http.Request) bool { //允许跨域
 			return true
 		},
-		ReadBufferSize:  1024,
+		ReadBufferSize:  1024, //读缓冲区大小
 		WriteBufferSize: 1024,
 	}
 )
 
 type CheckOriginHandler func(r *http.Request) bool
 type Manager struct {
-	sync.RWMutex
+	sync.RWMutex       //读写锁
 	websocketUpgrader  *websocket.Upgrader
 	ServerId           string
 	CheckOriginHandler CheckOriginHandler
@@ -33,8 +33,9 @@ func (m *Manager) Run(addr string) {
 	logs.Fatal("connector listen serve err:%v", http.ListenAndServe(addr, nil))
 }
 
+// serveWS 接收HTTP请求、升级为WebSocket连接
 func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
-	//websocket 基于http
+	//升级为websocket连接
 	if m.websocketUpgrader == nil {
 		m.websocketUpgrader = &websocketUpgrader
 	}
@@ -43,13 +44,14 @@ func (m *Manager) serveWS(w http.ResponseWriter, r *http.Request) {
 		logs.Error("websocket upgrade err:%v", err)
 		return
 	}
-	client := NewWsConnection(wsConn, m)
+	client := NewWsConnection(wsConn, m) //创建websocket连接
 	m.addClient(client)
 	client.Run()
 }
 
+// addClient 将websocket客户端添加到clients映射中
 func (m *Manager) addClient(client *WsConnection) {
-	m.Lock()
+	m.Lock() //加锁确保多个并发连接不会同时修改clients映射
 	defer m.Unlock()
 	m.clients[client.Cid] = client
 }
@@ -66,7 +68,7 @@ func (m *Manager) removeClient(wc *WsConnection) {
 func (m *Manager) clientReadChanHandler() {
 	for {
 		select {
-		case body, ok := <-m.ClientReadChan:
+		case body, ok := <-m.ClientReadChan: //读取客户端发来的消息
 			if ok {
 				m.decodeClientPack(body)
 			}

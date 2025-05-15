@@ -49,6 +49,7 @@ type NatsConfig struct {
 
 type GameConfigValue map[string]any
 
+// InitConfig 读取配置
 func InitConfig(configDir string) {
 	Conf = new(Config)
 	dir, err := os.ReadDir(configDir)
@@ -93,22 +94,24 @@ func readServersConfig(confFile string) {
 	typeServerConfig()
 }
 
+// typeServerConfig 分类存储服务器配置
 func typeServerConfig() {
-	if len(Conf.ServersConf.Servers) > 0 {
+	if len(Conf.ServersConf.Servers) > 0 { //判断是否有服务器配置
 		if Conf.ServersConf.TypeServer == nil {
-			Conf.ServersConf.TypeServer = make(map[string][]*ServersConfig)
+			Conf.ServersConf.TypeServer = make(map[string][]*ServersConfig) //创建map
 		}
 		for _, v := range Conf.ServersConf.Servers {
 			if Conf.ServersConf.TypeServer[v.ServerType] == nil {
-				Conf.ServersConf.TypeServer[v.ServerType] = make([]*ServersConfig, 0)
+				Conf.ServersConf.TypeServer[v.ServerType] = make([]*ServersConfig, 0) //根据服务器类型对配置分组
 			}
 			Conf.ServersConf.TypeServer[v.ServerType] = append(Conf.ServersConf.TypeServer[v.ServerType], v)
 		}
 	}
 }
 
+// readGameConfig 读取游戏配置
 func readGameConfig(confFile string) {
-	var gameConfig = make(map[string]GameConfigValue)
+	var gameConfig = make(map[string]GameConfigValue) //存储配置内容的mao
 	v := viper.New()
 	v.SetConfigFile(confFile)
 	// 实时监听
@@ -133,6 +136,7 @@ func readGameConfig(confFile string) {
 	Conf.GameConfig = gameConfig
 }
 
+// GetConnector 获取指定id的connector配置
 func (c *Config) GetConnector(serverId string) *ConnectorConfig {
 	for _, v := range c.ServersConf.Connector {
 		if v.ID == serverId {

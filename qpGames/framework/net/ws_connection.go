@@ -39,51 +39,52 @@ func (c WsConnection) Run() {
 	c.Conn.SetPongHandler(c.PongHandler)
 }
 
-// 服务端给客户端写消息
+// writeMessage 服务端给客户端写消息
 func (c *WsConnection) writeMessage() {
 	ticker := time.NewTicker(pingInterval)
 	for {
 		select {
 		case message, ok := <-c.WriteChan:
-			if !ok {
+			if !ok { //通道关闭
 				if err := c.Conn.WriteMessage(websocket.CloseMessage, nil); err != nil {
 					logs.Error("connection closed,%v", err)
 				}
 				return
 			}
-			if err := c.Conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
+			if err := c.Conn.WriteMessage(websocket.BinaryMessage, message); err != nil { //写入消息
 				logs.Error("client[%s] write message failed,err:%v", c.Cid, err)
 			}
 		case <-ticker.C:
-			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil { //设置写入超时时间
 				logs.Error("client[%s] ping SetWriteDeadline err:%v", c.Cid, err)
 			}
 			logs.Info("ping...")
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil { //发送ping消息，检查连接是否正常
 				logs.Error("client[%s] ping err:%v", c.Cid, err)
 			}
 		}
 	}
 }
 
+// readMessage 读取客户端发来的消息
 func (c *WsConnection) readMessage() {
 	defer func() {
 		c.manager.removeClient(c)
 	}()
-	c.Conn.SetReadLimit(maxMessageSize)
-	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+	c.Conn.SetReadLimit(maxMessageSize)                                      //设置读取数据最大长度
+	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil { //设置读取超时时间
 		logs.Error("SetReadDeadline err:%v", err)
 		return
 	}
 	for {
-		messageType, message, err := c.Conn.ReadMessage()
+		messageType, message, err := c.Conn.ReadMessage() //读取消息
 		if err != nil {
 			break
 		}
 		//客户端发来的消息是二进制消息
 		if messageType == websocket.BinaryMessage {
 			if c.ReadChan != nil {
-				c.ReadChan <- &MsgPack{
+				c.ReadChan <- &MsgPack{ //将消息封装成MsgPack对象，发送到读取通道
 					Cid:  c.Cid,
 					Body: message,
 				}
@@ -96,7 +97,7 @@ func (c *WsConnection) readMessage() {
 
 func (c *WsConnection) PongHandler(data string) error {
 	logs.Info("pong...")
-	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil { //延长读取超时时间，延长连接活跃期
 		return err
 	}
 	return nil
@@ -107,7 +108,7 @@ func NewWsConnection(conn *websocket.Conn, manager *Manager) *WsConnection {
 	return &WsConnection{
 		Conn:      conn,
 		manager:   manager,
-		Cid:       cid,
+		Cid:       cid, //唯一连接id
 		WriteChan: make(chan []byte, 1024),
 		ReadChan:  manager.ClientReadChan,
 	}
