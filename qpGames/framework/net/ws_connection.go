@@ -26,6 +26,11 @@ type WsConnection struct {
 	WriteChan chan []byte
 }
 
+func (c *WsConnection) SendMessage(buf []byte) error {
+	c.WriteChan <- buf
+	return nil
+}
+
 func (c WsConnection) Close() {
 	if c.Conn != nil {
 		c.Conn.Close()
@@ -58,7 +63,7 @@ func (c *WsConnection) writeMessage() {
 			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil { //设置写入超时时间
 				logs.Error("client[%s] ping SetWriteDeadline err:%v", c.Cid, err)
 			}
-			logs.Info("ping...")
+			//logs.Info("ping...")
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil { //发送ping消息，检查连接是否正常
 				logs.Error("client[%s] ping err:%v", c.Cid, err)
 			}
@@ -96,7 +101,7 @@ func (c *WsConnection) readMessage() {
 }
 
 func (c *WsConnection) PongHandler(data string) error {
-	logs.Info("pong...")
+	//logs.Info("pong...")
 	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil { //延长读取超时时间，延长连接活跃期
 		return err
 	}
