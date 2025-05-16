@@ -4,9 +4,12 @@ import (
 	"common/logs"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"framework/game"
 	"framework/protocol"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -29,8 +32,11 @@ type Manager struct {
 	clients            map[string]Connection
 	ClientReadChan     chan *MsgPack
 	handlers           map[protocol.PackageType]EventHandler
+	ConnectorHandlers  LogicHandler
 }
 
+type HandlerFunc func(session *Session, body []byte) (any, error)
+type LogicHandler map[string]HandlerFunc
 type EventHandler func(packet *protocol.Packet, c Connection) error
 
 func (m *Manager) Run(addr string) {
@@ -161,9 +167,44 @@ func (m *Manager) HeartbeatHandler(packet *protocol.Packet, c Connection) error 
 	return c.SendMessage(buf)
 }
 
-// MessageHandler 处理普通数据消息
+// MessageHandler 本地消息处理
 func (m *Manager) MessageHandler(packet *protocol.Packet, c Connection) error {
-	logs.Info("receiver message:%v", packet.Body)
+	message := packet.MessageBody() //提取消息体
+	logs.Info("receiver message body,type=%v,data:%v",
+		message.Type, message.Route, string(message.Data))
+	routeStr := message.Route
+	routers := strings.Split(routeStr, ".") //按.分割消息路由
+	if len(routers) != 3 {
+		return errors.New("router unsupported")
+	}
+	serverType := routers[0]
+	handlerMethod := fmt.Sprintf("%s.%s", routers[1], routers[2])
+	connectorConfig := game.Conf.GetConnectorByServerType(serverType) //获取当前serverType的connector配置
+	if connectorConfig != nil {
+		//本地connector服务处理器
+		handler, ok := m.ConnectorHandlers[handlerMethod]
+		if ok { //本地可以处理的请求
+			data, err := handler(c.GetSession(), message.Data)
+			if err != nil {
+				return err
+			}
+			marshal, _ := json.Marshal(data) //将data序列化为JSON字节数组
+			message.Type = protocol.Response //设置消息类型为响应
+			message.Data = marshal
+			encode, err := protocol.MessageEncode(message) //将消息编码为字节数组
+			if err != nil {
+				return err
+			}
+			res, err := protocol.Encode(packet.Type, encode)
+			if err != nil {
+				return err
+			}
+			return c.SendMessage(res) //把结果返回给客户端
+		} else {
+			//nat远端调用
+
+		}
+	}
 	return nil
 }
 

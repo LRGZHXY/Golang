@@ -24,6 +24,11 @@ type WsConnection struct {
 	manager   *Manager
 	ReadChan  chan *MsgPack
 	WriteChan chan []byte
+	Session   *Session
+}
+
+func (c *WsConnection) GetSession() *Session {
+	return c.Session
 }
 
 func (c *WsConnection) SendMessage(buf []byte) error {
@@ -116,5 +121,6 @@ func NewWsConnection(conn *websocket.Conn, manager *Manager) *WsConnection {
 		Cid:       cid, //唯一连接id
 		WriteChan: make(chan []byte, 1024),
 		ReadChan:  manager.ClientReadChan,
+		Session:   NewSession(cid),
 	}
 }

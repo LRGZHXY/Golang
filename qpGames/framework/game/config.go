@@ -145,3 +145,13 @@ func (c *Config) GetConnector(serverId string) *ConnectorConfig {
 	}
 	return nil
 }
+
+// GetConnectorByServerType 获取指定类型的connector配置
+func (c *Config) GetConnectorByServerType(serverType string) *ConnectorConfig {
+	for _, v := range c.ServersConf.Connector {
+		if v.ServerType == serverType {
+			return v
+		}
+	}
+	return nil
+}

@@ -3,6 +3,7 @@ package app
 import (
 	"common/config"
 	"common/logs"
+	"connector/route"
 	"context"
 	"framework/connector"
 	"os"
@@ -19,6 +20,7 @@ func Run(ctx context.Context, serverId string) error {
 	go func() {
 		c := connector.Default()
 		exit = c.Close
+		c.RegisterHandler(route.Register())
 		c.Run(serverId)
 	}()
 	// 定义匿名函数 赋值给变量stop

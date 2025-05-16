@@ -107,6 +107,7 @@ func SetDictionary(dict map[string]uint16) {
 	}
 }
 
+// MessageEncode 将消息编码为字节数组
 func MessageEncode(m *Message) ([]byte, error) {
 	if m.Type < Request || m.Type > Push {
 		return nil, errors.New("invalid message type")
@@ -268,6 +269,8 @@ func (p *Packet) HandshakeBody() *HandshakeBody {
 	}
 	return nil
 }
+
+// MessageBody 从数据包中提取消息体
 func (p *Packet) MessageBody() *Message {
 	if p.Type == Data {
 		body := p.Body.(Message)

@@ -10,17 +10,21 @@ import (
 type Connector struct {
 	isRunning bool
 	wsManager *net.Manager
+	handlers  net.LogicHandler
 }
 
 func Default() *Connector {
-	return &Connector{}
+	return &Connector{
+		handlers: make(net.LogicHandler),
+	}
 }
 
 func (c *Connector) Run(serverId string) {
 	if !c.isRunning {
 		//启动websocket和nats
 		c.wsManager = net.NewManager()
-		c.Server(serverId)
+		c.wsManager.ConnectorHandlers = c.handlers
+		c.Serve(serverId)
 	}
 }
 
@@ -31,8 +35,8 @@ func (c *Connector) Close() () {
 	}
 }
 
-// Server 启动websocket服务
-func (c *Connector) Server(serverId string) {
+// Serve 启动websocket服务
+func (c *Connector) Serve(serverId string) {
 	logs.Info("run connector:%v", serverId)
 	//地址 需要读取配置文件 在游戏中可能加载很多的配置信息 如果写到yml会比较复杂 不容易维护
 	//游戏中的配置读取一般采用json的方式 需要读取json的配置文件
@@ -44,4 +48,8 @@ func (c *Connector) Server(serverId string) {
 	addr := fmt.Sprintf("%s:%d", connectorConfig.Host, connectorConfig.ClientPort) //拼接出监听地址，例如 127.0.0.1:8080
 	c.isRunning = true
 	c.wsManager.Run(addr)
+}
+
+func (c *Connector) RegisterHandler(handlers net.LogicHandler) {
+	c.handlers = handlers
 }
