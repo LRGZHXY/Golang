@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"framework/game"
 	"framework/net"
+	"framework/remote"
 )
 
 type Connector struct {
 	isRunning bool
 	wsManager *net.Manager
 	handlers  net.LogicHandler
+	remoteCli remote.Client
 }
 
 func Default() *Connector {
@@ -19,11 +21,16 @@ func Default() *Connector {
 	}
 }
 
+// Run 初始化WebSocket管理器和nats客户端
 func (c *Connector) Run(serverId string) {
 	if !c.isRunning {
-		//启动websocket和nats
+		//启动websocket
 		c.wsManager = net.NewManager()
 		c.wsManager.ConnectorHandlers = c.handlers
+		//启动nats客户端
+		c.remoteCli = remote.NewNatsClient(serverId, c.wsManager.RemoteReadChan)
+		c.remoteCli.Run()
+		c.wsManager.RemoteCli = c.remoteCli
 		c.Serve(serverId)
 	}
 }

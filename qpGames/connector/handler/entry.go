@@ -40,6 +40,7 @@ func (h *EntryHandler) Entry(session *net.Session, body []byte) (any, error) {
 	if err != nil {
 		return common.F(biz.SqlError), nil
 	}
+	session.Uid = uid
 	return common.S(map[string]any{
 		"userInfo": user,
 		"config":   game.Conf.GetFrontGameConfig(),

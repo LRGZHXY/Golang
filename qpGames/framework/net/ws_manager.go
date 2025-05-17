@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"framework/game"
 	"framework/protocol"
+	"framework/remote"
 	"github.com/gorilla/websocket"
+	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -33,6 +36,8 @@ type Manager struct {
 	ClientReadChan     chan *MsgPack
 	handlers           map[protocol.PackageType]EventHandler
 	ConnectorHandlers  LogicHandler
+	RemoteReadChan     chan []byte
+	RemoteCli          remote.Client
 }
 
 type HandlerFunc func(session *Session, body []byte) (any, error)
@@ -41,6 +46,7 @@ type EventHandler func(packet *protocol.Packet, c Connection) error
 
 func (m *Manager) Run(addr string) {
 	go m.clientReadChanHandler()
+	go m.remoteReadChanHandler()
 	http.HandleFunc("/", m.serveWS)
 	//设置不同的消息处理器
 	m.setupEventHandlers()
@@ -200,9 +206,28 @@ func (m *Manager) MessageHandler(packet *protocol.Packet, c Connection) error {
 				return err
 			}
 			return c.SendMessage(res) //把结果返回给客户端
-		} else {
-			//nat远端调用
-
+		}
+	} else {
+		//nats 远端调用
+		dst, err := m.selectDst(serverType) //选择目标服务器
+		if err != nil {
+			logs.Error("remote send msg selectDst err:%v", err)
+			return err
+		}
+		msg := &remote.Msg{
+			Cid:         c.GetSession().Cid, //客户端连接
+			Uid:         c.GetSession().Uid,
+			Src:         m.ServerId, //当前服务器ID（发送方）
+			Dst:         dst,        //目标服务器ID（接收方）
+			Router:      handlerMethod,
+			Body:        message,
+			SessionData: c.GetSession().data,
+		}
+		data, _ := json.Marshal(msg)
+		err = m.RemoteCli.SendMsg(dst, data) //通过nats发送消息到目标服务器
+		if err != nil {
+			logs.Error("remote send msg err:%v", err)
+			return err
 		}
 	}
 	return nil
@@ -214,10 +239,31 @@ func (m *Manager) KickHandler(packet *protocol.Packet, c Connection) error {
 	return nil
 }
 
+func (m *Manager) remoteReadChanHandler() {
+	for {
+		select {
+		case msg := <-m.RemoteReadChan: //读取nats发来的消息
+			logs.Info("sub nats msg:%v", string(msg))
+		}
+	}
+}
+
+// selectDst 从服务器列表随机选择一个目标服务器
+func (m *Manager) selectDst(serverType string) (string, error) {
+	serversConfig, ok := game.Conf.ServersConf.TypeServer[serverType] //查找该类型服务器列表
+	if !ok {
+		return "", errors.New("no server found")
+	}
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	index := rand.Intn(len(serversConfig)) //在服务器列表长度范围内生成一个随机下标
+	return serversConfig[index].ID, nil
+}
+
 func NewManager() *Manager {
 	return &Manager{
 		ClientReadChan: make(chan *MsgPack, 1024),
 		clients:        make(map[string]Connection),
 		handlers:       make(map[protocol.PackageType]EventHandler),
+		RemoteReadChan: make(chan []byte, 1024),
 	}
 }
