@@ -5,6 +5,7 @@ import (
 	"common/logs"
 	"connector/route"
 	"context"
+	"core/repo"
 	"framework/connector"
 	"os"
 	"os/signal"
@@ -20,7 +21,8 @@ func Run(ctx context.Context, serverId string) error {
 	go func() {
 		c := connector.Default()
 		exit = c.Close
-		c.RegisterHandler(route.Register())
+		manager := repo.New()
+		c.RegisterHandler(route.Register(manager))
 		c.Run(serverId)
 	}()
 	// 定义匿名函数 赋值给变量stop

@@ -2,9 +2,11 @@ package game
 
 import (
 	"common/logs"
+	"encoding/json"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -110,8 +112,8 @@ func typeServerConfig() {
 }
 
 // readGameConfig 读取游戏配置
-func readGameConfig(confFile string) {
-	var gameConfig = make(map[string]GameConfigValue) //存储配置内容的mao
+func readGameConfig(configFile string) {
+	/*var gameConfig = make(map[string]GameConfigValue) //存储配置内容的mao
 	v := viper.New()
 	v.SetConfigFile(confFile)
 	// 实时监听
@@ -133,7 +135,22 @@ func readGameConfig(confFile string) {
 	if err != nil {
 		panic(fmt.Errorf("gameConfig Unmarshal config data,err:%v \n", err))
 	}
-	Conf.GameConfig = gameConfig
+	Conf.GameConfig = gameConfig*/
+	file, err := os.Open(configFile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	data, err := io.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	var gc map[string]GameConfigValue
+	err = json.Unmarshal(data, &gc)
+	if err != nil {
+		panic(err)
+	}
+	Conf.GameConfig = gc
 }
 
 // GetConnector 获取指定id的connector配置
@@ -154,4 +171,21 @@ func (c *Config) GetConnectorByServerType(serverType string) *ConnectorConfig {
 		}
 	}
 	return nil
+}
+
+// GetFrontGameConfig 从游戏配置中获取前端需要的配置
+func (c *Config) GetFrontGameConfig() map[string]any {
+	result := make(map[string]any)
+	for k, v := range c.GameConfig { //遍历所有游戏配置项
+		value, ok := v["value"]
+		backend := false
+		_, exist := v["backend"]
+		if exist {
+			backend = v["backend"].(bool)
+		}
+		if ok && !backend {
+			result[k] = value
+		}
+	}
+	return result
 }

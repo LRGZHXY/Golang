@@ -3,6 +3,19 @@ metricPort: 5856
 appName: connector
 log:
   level: DEBUG
+db:
+  mongo:
+    url: mongodb://127.0.0.1:27017
+    userName: root
+    password: 905428
+    minPoolSize: 10
+    maxPoolSize: 100
+    db: admin
+  redis:
+    addr: 127.0.0.1:6379
+    poolSize: 10
+    minIdleConns: 1
+    password:
 jwt:
   secret: 123456
   exp: 7
