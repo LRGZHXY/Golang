@@ -81,14 +81,14 @@ func (r *Register) watcher() {
 				r.etcdCli.Close()
 			}
 			logs.Info("unregister etcd...")
-		case <-r.keepAliveChan: //收到续约信号
-			//logs.Info("续约成功，%v", res)
-			//续约
-			/*if res == nil { // "=="!!! 不然会死循环发送“user: register service success,key=/user/v1/127.0.0.1:11500”
+		case res := <-r.keepAliveChan: //收到续约信号
+			//如果etcd重启了 相当于连接断开 需要重新进行连接 res==nil
+			if res == nil { // "=="!!! 不然会死循环发送“user: register service success,key=/user/v1/127.0.0.1:11500”
 				if err := r.register(); err != nil {
 					logs.Error("keepAliveChan register failed,err:%v", err)
 				}
-			}*/
+				logs.Info("续约重新注册成功，%v", res)
+			}
 		case <-ticker.C: //定时器触发
 			if r.keepAliveChan == nil {
 				if err := r.register(); err != nil {
