@@ -10,7 +10,7 @@ db:
     password: 905428
     minPoolSize: 10
     maxPoolSize: 100
-    db: admin
+    db: qpGames
   redis:
     addr: 127.0.0.1:6379
     poolSize: 10

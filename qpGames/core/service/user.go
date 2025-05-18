@@ -10,6 +10,7 @@ import (
 	"core/repo"
 	"fmt"
 	"framework/game"
+	hall "hall/models/request"
 	"time"
 )
 
@@ -40,6 +41,20 @@ func (s *UserService) FindUserByUid(ctx context.Context, uid string, info reques
 		}
 	}
 	return user, nil
+}
+
+func (s *UserService) UpdateUserAddressByUid(uid string, req hall.UpdateUserAddressReq) error {
+	user := &entity.User{ //构建user实体
+		Uid:      uid,
+		Address:  req.Address,
+		Location: req.Location,
+	}
+	err := s.userDao.UpdateUserAddressByUid(context.TODO(), user)
+	if err != nil {
+		logs.Error("userDao.UpdateUserAddressByUid err:%v", err)
+		return err
+	}
+	return nil
 }
 
 func NewUserService(r *repo.Manager) *UserService {

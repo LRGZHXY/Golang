@@ -37,6 +37,20 @@ func (d *UserDao) Insert(ctx context.Context, user *entity.User) error {
 	return nil
 }
 
+// UpdateUserAddressByUid 更新用户地址
+func (d *UserDao) UpdateUserAddressByUid(ctx context.Context, user *entity.User) error {
+	db := d.repo.Mongo.Db.Collection("user")
+	_, err := db.UpdateOne(ctx, bson.M{ //按照uid查找用户文档
+		"uid": user.Uid,
+	}, bson.M{ //更新用户地址
+		"$set": bson.M{
+			"address":  user.Address,
+			"location": user.Location,
+		},
+	})
+	return err
+}
+
 func NewUserDao(m *repo.Manager) *UserDao {
 	return &UserDao{
 		repo: m,
