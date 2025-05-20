@@ -6,7 +6,7 @@ import (
 	"framework/remote"
 )
 
-// App 是nats的客户端 处理实际游戏逻辑
+// App 就是nats的客户端 处理实际游戏逻辑的服务
 type App struct {
 	remoteCli remote.Client
 	readChan  chan []byte
@@ -42,9 +42,10 @@ func (a *App) readChanMsg() {
 			var remoteMsg remote.Msg
 			json.Unmarshal(msg, &remoteMsg)
 			session := remote.NewSession(a.remoteCli, &remoteMsg)
+			session.SetData(remoteMsg.SessionData)
 			//根据路由消息 发送给对应的handler
-			route := remoteMsg.Router
-			if handlerFunc := a.handlers[route]; handlerFunc != nil {
+			router := remoteMsg.Router
+			if handlerFunc := a.handlers[router]; handlerFunc != nil {
 				result := handlerFunc(session, remoteMsg.Body.Data)
 				message := remoteMsg.Body
 				var body []byte
@@ -64,6 +65,7 @@ func (a *App) readChanMsg() {
 			}
 		}
 	}
+
 }
 
 // writeChanMsg 将处理结果回发给请求者

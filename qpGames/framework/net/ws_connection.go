@@ -19,12 +19,13 @@ var (
 )
 
 type WsConnection struct {
-	Cid       string
-	Conn      *websocket.Conn
-	manager   *Manager
-	ReadChan  chan *MsgPack
-	WriteChan chan []byte
-	Session   *Session
+	Cid        string
+	Conn       *websocket.Conn
+	manager    *Manager
+	ReadChan   chan *MsgPack
+	WriteChan  chan []byte
+	Session    *Session
+	pingTicker *time.Ticker
 }
 
 func (c *WsConnection) GetSession() *Session {
@@ -36,13 +37,16 @@ func (c *WsConnection) SendMessage(buf []byte) error {
 	return nil
 }
 
-func (c WsConnection) Close() {
+func (c *WsConnection) Close() {
 	if c.Conn != nil {
 		c.Conn.Close()
 	}
+	if c.pingTicker != nil {
+		c.pingTicker.Stop()
+	}
 }
 
-func (c WsConnection) Run() {
+func (c *WsConnection) Run() {
 	go c.readMessage()
 	go c.writeMessage()
 	//做一些心跳检测 websocket中 ping pong机制
@@ -51,26 +55,27 @@ func (c WsConnection) Run() {
 
 // writeMessage 服务端给客户端写消息
 func (c *WsConnection) writeMessage() {
-	ticker := time.NewTicker(pingInterval)
+
+	c.pingTicker = time.NewTicker(pingInterval)
 	for {
 		select {
 		case message, ok := <-c.WriteChan:
 			if !ok { //通道关闭
-				if err := c.Conn.WriteMessage(websocket.CloseMessage, nil); err != nil {
-					logs.Error("connection closed,%v", err)
+				if err := c.Conn.WriteMessage(websocket.CloseMessage, nil); err != nil { //写入消息
+					logs.Error("connection closed, %v", err)
 				}
 				return
 			}
-			if err := c.Conn.WriteMessage(websocket.BinaryMessage, message); err != nil { //写入消息
-				logs.Error("client[%s] write message failed,err:%v", c.Cid, err)
+			if err := c.Conn.WriteMessage(websocket.BinaryMessage, message); err != nil {
+				logs.Error("client[%s] write message err :%v", c.Cid, err)
 			}
-		case <-ticker.C:
+		case <-c.pingTicker.C:
 			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil { //设置写入超时时间
-				logs.Error("client[%s] ping SetWriteDeadline err:%v", c.Cid, err)
+				logs.Error("client[%s] ping SetWriteDeadline err :%v", c.Cid, err)
 			}
-			//logs.Info("ping...")
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil { //发送ping消息，检查连接是否正常
-				logs.Error("client[%s] ping err:%v", c.Cid, err)
+				logs.Error("client[%s] ping  err :%v", c.Cid, err)
+				c.Close()
 			}
 		}
 	}
@@ -100,13 +105,12 @@ func (c *WsConnection) readMessage() {
 				}
 			}
 		} else {
-			logs.Error("unsupported message type:%d", messageType)
+			logs.Error("unsupported message type : %d", messageType)
 		}
 	}
 }
 
 func (c *WsConnection) PongHandler(data string) error {
-	//logs.Info("pong...")
 	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil { //延长读取超时时间，延长连接活跃期
 		return err
 	}

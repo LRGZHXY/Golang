@@ -1,6 +1,6 @@
 httpPort: 13000
-metricPort: 5856
-appName: connector
+metricPort: 5857
+appName: hall
 log:
   level: DEBUG
 db:
@@ -21,8 +21,8 @@ jwt:
   exp: 7
 domain:
   user:
-    name: user/v1 #etcd中的key
-    loadBalance: true #是否开启负载均衡
+    name: user/v1
+    loadBalance: true
 etcd:
   addrs:
     - 127.0.0.1:2379

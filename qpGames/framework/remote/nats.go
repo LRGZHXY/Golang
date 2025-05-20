@@ -12,7 +12,7 @@ type NatsClient struct {
 	readChan chan []byte
 }
 
-func NewNatsClient(serverId string, readChan chan []byte) Client {
+func NewNatsClient(serverId string, readChan chan []byte) *NatsClient {
 	return &NatsClient{
 		serverId: serverId,
 		readChan: readChan,

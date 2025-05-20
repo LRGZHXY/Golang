@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const Prefix = "QPGAMES" //Redis键前缀 QPGAMES:AccountId
+const Prefix = "MSQP" //Redis键前缀 MSQP:AccountId
 const AccountIdRedisKey = "AccountId"
 const AccountIdBegin = 10000
 
@@ -14,13 +14,13 @@ type RedisDao struct {
 	repo *repo.Manager
 }
 
-func (d RedisDao) NextAccountId() (string, error) {
-	//自增
+func (d *RedisDao) NextAccountId() (string, error) {
+	//自增 给一个前缀
 	return d.incr(Prefix + ":" + AccountIdRedisKey)
 }
 
 // incr 自增redis key
-func (d RedisDao) incr(key string) (string, error) {
+func (d *RedisDao) incr(key string) (string, error) {
 	todo := context.TODO()
 	var exist int64
 	var err error
@@ -29,9 +29,10 @@ func (d RedisDao) incr(key string) (string, error) {
 	} else {
 		exist, err = d.repo.Redis.ClusterCli.Exists(todo, key).Result()
 	}
-	if exist == 0 { //不存在
+	if exist == 0 {
+		//不存在
 		if d.repo.Redis.Cli != nil {
-			err = d.repo.Redis.Cli.Set(todo, key, AccountIdBegin, 0).Err() //初始化key
+			err = d.repo.Redis.Cli.Set(todo, key, AccountIdBegin, 0).Err()
 		} else {
 			err = d.repo.Redis.ClusterCli.Set(todo, key, AccountIdBegin, 0).Err()
 		}

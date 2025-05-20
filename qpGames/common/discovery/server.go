@@ -11,14 +11,16 @@ import (
 type Server struct {
 	Name    string `json:"name"`
 	Addr    string `json:"addr"`
-	Version string `json:"version"`
 	Weight  int    `json:"weight"`
+	Version string `json:"version"`
 	Ttl     int64  `json:"ttl"`
 }
 
 // BuildRegisterKey 根据服务的Version字段生成一个用于注册服务的键
 func (s Server) BuildRegisterKey() string {
+
 	if len(s.Version) == 0 { //没有版本号
+		// user
 		return fmt.Sprintf("/%s/%s", s.Name, s.Addr) // /name/addr
 	}
 	return fmt.Sprintf("/%s/%s/%s", s.Name, s.Version, s.Addr) // /name/version/addr
@@ -45,8 +47,8 @@ func ParseKey(key string) (Server, error) {
 	if len(strs) == 3 {
 		return Server{
 			Name:    strs[0],
-			Version: strs[1],
 			Addr:    strs[2],
+			Version: strs[1],
 		}, nil
 	}
 	return Server{}, errors.New("invalid key")

@@ -1,4 +1,4 @@
-package myError
+package msError
 
 import (
 	"errors"

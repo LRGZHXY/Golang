@@ -17,7 +17,6 @@ type RedisManager struct {
 func NewRedis() *RedisManager {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) //避免连接、Ping操作无期限等待
 	defer cancel()
-
 	var clusterCli *redis.ClusterClient
 	var cli *redis.Client
 	addrs := config.Conf.Database.RedisConf.ClusterAddrs //从配置文件中读取Redis集群地址

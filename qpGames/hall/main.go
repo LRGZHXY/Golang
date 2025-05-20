@@ -28,17 +28,18 @@ var (
 	serverId      string
 )
 
-//var configFile = flag.String("config", "application.yaml", "config file")
+//var configFile = flag.String("config", "application.yml", "config file")
 
 func init() {
-	rootCmd.Flags().StringVar(&configFile, "config", "application.yaml", "app config yml file")
+	rootCmd.Flags().StringVar(&configFile, "config", "application.yml", "app config yml file")
 	rootCmd.Flags().StringVar(&gameConfigDir, "gameDir", "../config", "game config dir")
 	rootCmd.Flags().StringVar(&serverId, "serverId", "", "app server id， required")
 	_ = rootCmd.MarkFlagRequired("serverId")
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil { //执行命令
+	//1.加载配置
+	if err := rootCmd.Execute(); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
@@ -46,12 +47,12 @@ func main() {
 	game.InitConfig(gameConfigDir)
 	//2.启动监控
 	go func() {
-		err := metrics.Server(fmt.Sprintf("0.0.0.0:%d", config.Conf.MetricPort))
+		err := metrics.Serve(fmt.Sprintf("0.0.0.0:%d", config.Conf.MetricPort))
 		if err != nil {
 			panic(err)
 		}
 	}()
-	//3.连接nats服务并进行订阅
+	//3.连接nats服务 并进行订阅
 	err := app.Run(context.Background(), serverId)
 	if err != nil {
 		log.Println(err)

@@ -9,7 +9,7 @@ type User struct {
 	Location         string             `bson:"location" json:"location"`                 // 地理位置信息，国家省市街道
 	FrontendId       string             `bson:"frontendId" json:"frontendId"`             // 前端服务器ID
 	RoomID           string             `bson:"roomID" json:"roomID"`                     // 房间ID
-	IsAgent          bool               `bson:"isAgent" json:"isAgent"`                   // 是否是代理
+	IsAgent          bool               `bson:"isAgent" json:"isAgent"`                   // 是否是代理  true代表有创建亲友圈的权限
 	RealName         string             `bson:"realName" json:"realName"`                 // 实名认证信息
 	MobilePhone      string             `bson:"mobilePhone" json:"mobilePhone"`           // 绑定的手机
 	InviteMsg        InviteMsg          `bson:"inviteMsg" json:"inviteMsg"`

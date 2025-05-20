@@ -20,14 +20,13 @@ type PackageType byte
 type MessageType byte
 
 const (
-	None         PackageType = 0x00 // 默认无类型包
-	Handshake    PackageType = 0x01 // 握手请求包（客户端 => 服务端），服务端需响应
-	HandshakeAck PackageType = 0x02 // 握手确认包（客户端 => 服务端），用于完成握手
-	Heartbeat    PackageType = 0x03 // 心跳包（定时交互，保持连接活跃）
-	Data         PackageType = 0x04 // 常规数据包（业务数据）
-	Kick         PackageType = 0x05 // 踢出通知包（如强制下线）
+	None         PackageType = 0x00
+	Handshake    PackageType = 0x01 // Handshake represents a handshake: request(client) <====> handshake response(server)
+	HandshakeAck PackageType = 0x02 // HandshakeAck represents a handshake ack from client to server
+	Heartbeat    PackageType = 0x03 // Heartbeat represents a heartbeat
+	Data         PackageType = 0x04 // settings represents a common data packet
+	Kick         PackageType = 0x05 // Kick represents a kick off packet
 )
-
 const (
 	Request  MessageType = 0x00 // ----000-
 	Notify   MessageType = 0x01 // ----001-
@@ -44,7 +43,7 @@ const (
 	ErrorMask         = 0x20 // 响应错误标识 00100000
 )
 const (
-	HeaderLen     = 4 // 包头长度 = 1字节类型 + 3字节包体长度
+	HeaderLen     = 4 // 1byte package type 3byte body len
 	MaxPacketSize = 1 << 24
 )
 
@@ -298,7 +297,7 @@ type HandshakeResponse struct {
 }
 
 type Message struct {
-	Type            MessageType // message type 4中消息类型
+	Type            MessageType // message type 4中消息类型 request response notify push
 	ID              uint        // unique id, zero while notify mode 消息id（request response）
 	Route           string      // route for locating service 消息路由
 	Data            []byte      // payload  消息体的原始数据

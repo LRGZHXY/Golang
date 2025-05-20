@@ -88,7 +88,7 @@ func InitConfig(confFile string) {
 	// 实时监听
 	v.WatchConfig()
 	v.OnConfigChange(func(in fsnotify.Event) {
-		log.Println("配置文件修改了")
+		log.Println("配置文件被修改了")
 		err := v.Unmarshal(&Conf)
 		if err != nil {
 			panic(fmt.Errorf("Unmarshal change config data,err:%v \n", err))

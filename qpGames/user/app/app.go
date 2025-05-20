@@ -16,17 +16,15 @@ import (
 	"user/pb"
 )
 
-// Run 启动程序 启动grpc服务 启动http服务 启用日志 启用数据库
+// Run 启动程序 启动grpc服务 启用http服务  启用日志 启用数据库
 func Run(ctx context.Context) error {
-	//1.做一个日志库 info error fatal debug..
+	//1.做一个日志库 info error fatal debug
 	logs.InitLog(config.Conf.AppName)
-
-	//2.创建一个新的服务注册对象register
+	//2. etcd注册中心 grpc服务注册到etcd中 客户端访问的时候 通过etcd获取grpc的地址
 	register := discovery.NewRegister()
-
 	//启动grpc服务端
-	server := grpc.NewServer() //创建一个新的gRPC服务器实例server
-	//注册grpc service 需要数据库 mongo redis
+	server := grpc.NewServer()
+	//注册 grpc service 需要数据库 mongo redis
 	//初始化 数据库管理
 	manager := repo.New()
 	go func() {
@@ -53,7 +51,7 @@ func Run(ctx context.Context) error {
 		register.Close()
 		manager.Close()
 		time.Sleep(3 * time.Second) //暂停三秒
-		logs.Info("stop and finish")
+		logs.Info("stop app finish")
 	}
 	// 优雅启停
 	c := make(chan os.Signal, 1) //创建一个channel,用来接收操作系统信号，缓冲区大小为1
@@ -61,7 +59,7 @@ func Run(ctx context.Context) error {
 	//SIGTERM	kill 命令默认信号
 	//SIGQUIT	quit 信号
 	//SIGHUP	终端挂起（重启提示）
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGHUP)
 	for {
 		select { //同时监听多个channel
 		case <-ctx.Done(): //上下文被取消
@@ -69,7 +67,7 @@ func Run(ctx context.Context) error {
 			return nil
 		case s := <-c: // <- 是接收操作符，表示从 channel 中接收数据
 			switch s {
-			case syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT:
+			case syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT:
 				stop()
 				logs.Info("user app quit")
 				return nil

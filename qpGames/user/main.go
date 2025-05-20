@@ -11,7 +11,7 @@ import (
 	"user/app"
 )
 
-var configFile = flag.String("config", "application.yaml", "config file")
+var configFile = flag.String("config", "application.yml", "config file")
 
 func main() {
 	//1.加载配置
@@ -19,7 +19,7 @@ func main() {
 	config.InitConfig(*configFile)
 	//2.启动监控
 	go func() {
-		err := metrics.Server(fmt.Sprintf("0.0.0.0:%d", config.Conf.MetricPort))
+		err := metrics.Serve(fmt.Sprintf("0.0.0.0:%d", config.Conf.MetricPort))
 		if err != nil {
 			panic(err)
 		}

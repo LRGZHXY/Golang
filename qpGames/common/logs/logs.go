@@ -29,7 +29,6 @@ func Fatal(format string, values ...any) {
 		logger.Fatalf(format, values...) //会按照格式化字符串输出,支持 %v, %s, %d 等格式化占位符
 	}
 }
-
 func Info(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Info(format)
@@ -53,7 +52,6 @@ func Debug(format string, values ...any) {
 		logger.Debugf(format, values...)
 	}
 }
-
 func Error(format string, values ...any) {
 	if len(values) == 0 {
 		logger.Error(format)

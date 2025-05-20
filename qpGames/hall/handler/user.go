@@ -23,7 +23,7 @@ func (h *UserHandler) UpdateUserAddress(session *remote.Session, msg []byte) any
 	if err := json.Unmarshal(msg, &req); err != nil {
 		return common.F(biz.RequestDataError)
 	}
-	err := h.userService.UpdateUserAddressByUid(session.GetUid(), req) //
+	err := h.userService.UpdateUserAddressByUid(session.GetUid(), req)
 	if err != nil {
 		return common.F(biz.SqlError)
 	}

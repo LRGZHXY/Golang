@@ -22,7 +22,7 @@ func NewMongo() *MongoManager {
 	//连接mongodb
 	//创建一个MongoDB客户端配置对象，并根据配置文件里的MongoDB URL自动解析并设置连接参数
 	clientOptions := options.Client().ApplyURI(config.Conf.Database.MongoConf.Url)
-	clientOptions.SetAuth(options.Credential{ //设置认证信息
+	clientOptions.SetAuth(options.Credential{
 		Username: config.Conf.Database.MongoConf.UserName,
 		Password: config.Conf.Database.MongoConf.Password,
 	})
@@ -30,11 +30,11 @@ func NewMongo() *MongoManager {
 	clientOptions.SetMaxPoolSize(uint64(config.Conf.Database.MongoConf.MaxPoolSize))
 	client, err := mongo.Connect(ctx, clientOptions) //连接mongodb
 	if err != nil {
-		logs.Fatal("mongo connect failed,err:%v", err)
+		logs.Fatal("mongo connect err:%v", err)
 		return nil
 	}
 	if err := client.Ping(ctx, readpref.Primary()); err != nil { //测试mongodb是否可用
-		logs.Fatal("mongo ping failed,err:%v", err)
+		logs.Fatal("mongo ping err:%v", err)
 		return nil
 	}
 	m := &MongoManager{

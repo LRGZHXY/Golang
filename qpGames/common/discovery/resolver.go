@@ -22,7 +22,7 @@ type Resolver struct {
 }
 
 // Build 构建一个gRPC解析器，通过连接etcd获取服务地址列表并监听其变更，从而实现服务发现与动态负载均衡。
-func (r Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
+func (r *Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	r.cc = cc //Resolver通过cc通知gRPC当前有哪些服务节点地址
 	//1.连接etcd
 	//建立etcd的连接
@@ -37,7 +37,7 @@ func (r Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts res
 	r.closeCh = make(chan struct{})
 	//2.根据key获取所有服务器地址
 	r.key = target.URL.Path
-	if err := r.sync(); err != nil {
+	if err = r.sync(); err != nil {
 		return nil, err
 	}
 	//3.启动监听协程（节点有变动，实时更新信息）
@@ -45,18 +45,18 @@ func (r Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts res
 	return nil, nil
 }
 
-func (r Resolver) Scheme() string {
+func (r *Resolver) Scheme() string {
 	return "etcd"
 }
 
 // sync 从etcd获取指定服务的地址列表并通知grpc更新连接信息
-func (r Resolver) sync() error {
+func (r *Resolver) sync() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.conf.RWTimeout)*time.Second)
 	defer cancel() //避免长时间阻塞
 
 	res, err := r.etcdCli.Get(ctx, r.key, clientv3.WithPrefix()) //从etcd读取所有以r.key为前缀的键值对
 	if err != nil {
-		logs.Error("grpc client get etcd failed,name=%s,err:%v", r.key, err)
+		logs.Error("grpc client get etcd failed, name=%s,err:%v", r.key, err)
 		return err
 	}
 	logs.Info("%v", res.Kvs)
@@ -64,7 +64,7 @@ func (r Resolver) sync() error {
 	for _, v := range res.Kvs {
 		server, err := ParseValue(v.Value) //遍历服务实例并解析
 		if err != nil {
-			logs.Error("grpc client parse etcd value failed,name=%s,err:%v", r.key, err)
+			logs.Error("grpc client parse etcd value failed, name=%s,err:%v", r.key, err)
 			continue
 		}
 		r.srvAddrList = append(r.srvAddrList, resolver.Address{
@@ -80,24 +80,26 @@ func (r Resolver) sync() error {
 		Addresses: r.srvAddrList,
 	})
 	if err != nil {
-		logs.Error("grpc client UpdateState failed,name=%s,err:%v", r.key, err)
+		logs.Error("grpc client UpdateState failed, name=%s, err: %v", r.key, err)
 		return err
 	}
 	return nil
 }
 
 // watch 监听etcd中的服务地址变化
-func (r Resolver) watch() {
-	r.watchCh = r.etcdCli.Watch(context.Background(), r.key, clientv3.WithPrefix()) //启动监听
+func (r *Resolver) watch() {
 	ticker := time.NewTicker(time.Minute)                                           //启动定时器，1分钟同步一次数据
+	r.watchCh = r.etcdCli.Watch(context.Background(), r.key, clientv3.WithPrefix()) //启动监听
 	for {
 		select {
 		case <-r.closeCh:
 			r.Close() //关闭etcd连接
 		case res, ok := <-r.watchCh:
 			if ok {
+				//
 				r.update(res.Events)
 			}
+
 		case <-ticker.C:
 			if err := r.sync(); err != nil {
 				logs.Error("watch sync failed,err:%v", err)
@@ -107,13 +109,13 @@ func (r Resolver) watch() {
 }
 
 // update 根据etcd事件更新服务地址列表
-func (r Resolver) update(events []*clientv3.Event) {
+func (r *Resolver) update(events []*clientv3.Event) {
 	for _, ev := range events {
 		switch ev.Type {
 		case clientv3.EventTypePut: //服务注册或变更
 			server, err := ParseValue(ev.Kv.Value) //解析新的服务地址
 			if err != nil {
-				logs.Error("grpc client update(EventTypePut) parse etcd value failed,name=%s,err:%v")
+				logs.Error("grpc client update(EventTypePut) parse etcd value failed, name=%s,err:%v", r.key, err)
 			}
 			addr := resolver.Address{
 				Addr:       server.Addr,
@@ -125,22 +127,25 @@ func (r Resolver) update(events []*clientv3.Event) {
 					Addresses: r.srvAddrList,
 				})
 				if err != nil {
-					logs.Error("grpc client update(EventTypePut) UpdateState failed,name=%s,err:%v", r.key, err)
+					logs.Error("grpc client update(EventTypePut) UpdateState failed, name=%s,err:%v", r.key, err)
 				}
 			}
 		case clientv3.EventTypeDelete: //服务下线
+			//接收到delete操作 删除r.srvAddrList其中匹配的
+			// user/v1/127.0.0.1:12000
 			server, err := ParseKey(string(ev.Kv.Key))
 			if err != nil {
-				logs.Error("grpc client update(EventTypeDelete) parse etcd value failed,name=%s,err:%v")
+				logs.Error("grpc client update(EventTypeDelete) parse etcd value failed, name=%s,err:%v", r.key, err)
 			}
 			addr := resolver.Address{Addr: server.Addr}
+			//r.srvAddrList remove操作
 			if list, ok := Remove(r.srvAddrList, addr); ok { //从r.srvAddrList中删除该地址
 				r.srvAddrList = list
 				err = r.cc.UpdateState(resolver.State{
 					Addresses: r.srvAddrList,
 				})
 				if err != nil {
-					logs.Error("grpc client update(EventTypeDelete) UpdateState failed,name=%s,err:%v", r.key, err)
+					logs.Error("grpc client update(EventTypeDelete) UpdateState failed, name=%s,err:%v", r.key, err)
 				}
 			}
 		}
@@ -148,12 +153,13 @@ func (r Resolver) update(events []*clientv3.Event) {
 }
 
 // Close 关闭etcd连接
-func (r Resolver) Close() {
+func (r *Resolver) Close() {
 	if r.etcdCli != nil {
 		err := r.etcdCli.Close()
 		if err != nil {
 			logs.Error("Resolver close etcd err:%v", err)
 		}
+		logs.Info("close etcd...")
 	}
 }
 
@@ -181,6 +187,7 @@ func Remove(list []resolver.Address, addr resolver.Address) ([]resolver.Address,
 // NewResolver 创建一个配置为EtcdConf的Resolver实例
 func NewResolver(conf config.EtcdConf) *Resolver {
 	return &Resolver{
-		conf: conf,
+		conf:        conf,
+		DialTimeout: conf.DialTimeout,
 	}
 }

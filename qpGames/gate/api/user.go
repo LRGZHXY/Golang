@@ -8,7 +8,7 @@ import (
 	"common/logs"
 	"common/rpc"
 	"context"
-	"framework/myError"
+	"framework/msError"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"time"
@@ -34,7 +34,7 @@ func (u *UserHandler) Register(ctx *gin.Context) {
 	//调用远程rpc接口
 	response, err := rpc.UserClient.Register(context.TODO(), &req)
 	if err != nil {
-		common.Fail(ctx, myError.ToError(err))
+		common.Fail(ctx, msError.ToError(err))
 		return
 	}
 	uid := response.Uid //获取uid

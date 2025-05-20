@@ -15,11 +15,10 @@ func RegisterRouter() *gin.Engine {
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	//初始化grpc客户端
-	rpc.Init()
-
+	//初始化grpc的client gate是做为grpc的客户端 去调用user grpc服务
 	r := gin.Default()
 	r.Use(auth.Cors()) //跨域问题
+	rpc.Init()
 	userHandler := api.NewUserHandler()
 	r.POST("/register", userHandler.Register)
 	return r

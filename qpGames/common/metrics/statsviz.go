@@ -6,7 +6,7 @@ import (
 )
 
 // Server 可视化实时监控  http://localhost:5854/debug/statsviz/
-func Server(add string) error {
+func Serve(add string) error {
 	mux := http.NewServeMux()
 	if err := statsviz.Register(mux); err != nil {
 		return err
@@ -15,5 +15,4 @@ func Server(add string) error {
 		return err
 	}
 	return nil
-
 }

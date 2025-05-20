@@ -24,29 +24,29 @@ type Config struct {
 	ServersConf ServersConf                `json:"serversConf"`
 }
 type ServersConf struct {
-	Nats       NatsConfig         `json:"nats"`
-	Connector  []*ConnectorConfig `json:"connector"`
-	Servers    []*ServersConfig   `json:"servers"`
+	Nats       NatsConfig         `json:"nats" `
+	Connector  []*ConnectorConfig `json:"connector" `
+	Servers    []*ServersConfig   `json:"servers" `
 	TypeServer map[string][]*ServersConfig
 }
 
 type ServersConfig struct {
-	ID               string `json:"id"`
-	ServerType       string `json:"serverType"`
-	HandleTimeOut    int    `json:"handleTimeOut"`
-	RPCTimeOut       int    `json:"rpcTimeOut"`
-	MaxRunRoutineNum int    `json:"maxRunRoutineNum"`
+	ID               string `json:"id" `
+	ServerType       string `json:"serverType" `
+	HandleTimeOut    int    `json:"handleTimeOut" `
+	RPCTimeOut       int    `json:"rpcTimeOut" `
+	MaxRunRoutineNum int    `json:"maxRunRoutineNum" `
 }
 
 type ConnectorConfig struct {
-	ID         string `json:"id"`
-	Host       string `json:"host"`
-	ClientPort int    `json:"clientPort"`
-	Frontend   bool   `json:"frontend"`
-	ServerType string `json:"serverType"`
+	ID         string `json:"id" `
+	Host       string `json:"host" `
+	ClientPort int    `json:"clientPort" `
+	Frontend   bool   `json:"frontend" `
+	ServerType string `json:"serverType" `
 }
 type NatsConfig struct {
-	Url string `json:"url"`
+	Url string `json:"url" mapstructure:"db"`
 }
 
 type GameConfigValue map[string]any
@@ -69,35 +69,35 @@ func InitConfig(configDir string) {
 	}
 }
 
-func readServersConfig(confFile string) {
+func readServersConfig(configFile string) {
 	var serversConfig ServersConf
 	v := viper.New()
-	v.SetConfigFile(confFile)
+	v.SetConfigFile(configFile)
 	// 实时监听
 	v.WatchConfig()
 	v.OnConfigChange(func(in fsnotify.Event) {
-		log.Println("serversConfig配置文件修改了")
+		log.Println("serversConfig 配置文件被修改了")
 		err := v.Unmarshal(&serversConfig)
 		if err != nil {
-			panic(fmt.Errorf("gameConfig Unmarshal change config data,err:%v \n", err))
+			panic(fmt.Errorf("serversConfig Unmarshal change config data,err:%v \n", err))
 		}
 		Conf.ServersConf = serversConfig
 	})
 	err := v.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("gameConfig读取配置文件出错,err:%v \n", err))
+		panic(fmt.Errorf("serversConfig 读取配置文件出错,err:%v \n", err))
 	}
 	//解析
 	err = v.Unmarshal(&serversConfig)
 	if err != nil {
-		panic(fmt.Errorf("gameConfig Unmarshal config data,err:%v \n", err))
+		panic(fmt.Errorf("serversConfig Unmarshal config data,err:%v \n", err))
 	}
 	Conf.ServersConf = serversConfig
-	typeServerConfig()
+	typeServersConfig()
 }
 
 // typeServerConfig 分类存储服务器配置
-func typeServerConfig() {
+func typeServersConfig() {
 	if len(Conf.ServersConf.Servers) > 0 { //判断是否有服务器配置
 		if Conf.ServersConf.TypeServer == nil {
 			Conf.ServersConf.TypeServer = make(map[string][]*ServersConfig) //创建map
@@ -113,29 +113,28 @@ func typeServerConfig() {
 
 // readGameConfig 读取游戏配置
 func readGameConfig(configFile string) {
-	/*var gameConfig = make(map[string]GameConfigValue) //存储配置内容的mao
-	v := viper.New()
-	v.SetConfigFile(confFile)
-	// 实时监听
-	v.WatchConfig()
-	v.OnConfigChange(func(in fsnotify.Event) {
-		log.Println("gameConfig配置文件修改了")
-		err := v.Unmarshal(&gameConfig)
-		if err != nil {
-			panic(fmt.Errorf("gameConfig Unmarshal change config data,err:%v \n", err))
-		}
-		Conf.GameConfig = gameConfig
-	})
-	err := v.ReadInConfig()
-	if err != nil {
-		panic(fmt.Errorf("gameConfig读取配置文件出错,err:%v \n", err))
-	}
-	//解析
-	err = v.Unmarshal(&gameConfig)
-	if err != nil {
-		panic(fmt.Errorf("gameConfig Unmarshal config data,err:%v \n", err))
-	}
-	Conf.GameConfig = gameConfig*/
+	//gc := make(map[string]GameConfigValue)
+	//v := viper.New()
+	//v.SetConfigFile(configFile)
+	//v.WatchConfig()
+	//v.OnConfigChange(func(in fsnotify.Event) {
+	//	log.Println("gameConfig配置文件被修改了")
+	//	err := v.Unmarshal(&gc)
+	//	if err != nil {
+	//		panic(fmt.Errorf("gameConfig Unmarshal change config data,err:%v \n", err))
+	//	}
+	//	Conf.GameConfig = gc
+	//})
+	//err := v.ReadInConfig()
+	//if err != nil {
+	//	panic(fmt.Errorf("gameConfig 读取配置文件出错,err:%v \n", err))
+	//}
+	//log.Println("%v", v.AllKeys())
+	//err = v.Unmarshal(&gc)
+	//if err != nil {
+	//	panic(fmt.Errorf("gameConfig Unmarshal config data,err:%v \n", err))
+	//}
+	//Conf.GameConfig = gc
 	file, err := os.Open(configFile)
 	if err != nil {
 		panic(err)
