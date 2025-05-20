@@ -13,25 +13,25 @@ type MessageData struct {
 type GameStatus int
 
 type GameData struct {
-	BankerChairID   int                      `json:"bankerChairID"`
-	ChairCount      int                      `json:"chairCount"`
-	CurBureau       int                      `json:"curBureau"`
+	BankerChairID   int                      `json:"bankerChairID"` // 庄家座位ID
+	ChairCount      int                      `json:"chairCount"`    // 玩家总人数
+	CurBureau       int                      `json:"curBureau"`     // 当前局数
 	CurScore        int                      `json:"curScore"`
-	CurScores       []int                    `json:"curScores"`
+	CurScores       []int                    `json:"curScores"` // 各玩家当前分数
 	GameStarter     bool                     `json:"gameStarter"`
 	GameStatus      GameStatus               `json:"gameStatus"`
-	HandCards       [][]int                  `json:"handCards"`
-	LookCards       []int                    `json:"lookCards"`
+	HandCards       [][]int                  `json:"handCards"` // 所有玩家手牌（二维数组，每个玩家对应一个int数组）
+	LookCards       []int                    `json:"lookCards"` // 查看过的牌
 	Loser           []int                    `json:"loser"`
 	Winner          []int                    `json:"winner"`
 	MaxBureau       int                      `json:"maxBureau"`
-	PourScores      [][]int                  `json:"pourScores"`
+	PourScores      [][]int                  `json:"pourScores"` // 各玩家下注记录（二维数组）
 	GameType        GameType                 `json:"gameType"`
 	BaseScore       int                      `json:"baseScore"`
 	Result          any                      `json:"result"`
 	Round           int                      `json:"round"`
-	Tick            int                      `json:"tick"` //倒计时
-	UserTrustArray  []bool                   `json:"userTrustArray"`
+	Tick            int                      `json:"tick"`           //倒计时
+	UserTrustArray  []bool                   `json:"userTrustArray"` // 玩家托管状态
 	UserStatusArray []UserStatus             `json:"userStatusArray"`
 	UserWinRecord   map[string]UserWinRecord `json:"userWinRecord"`
 	ReviewRecord    []BureauReview           `json:"reviewRecord"`
@@ -136,7 +136,7 @@ const (
 	GameReviewPush      = 416
 )
 
-// UpdateUserInfoPushGold  {"gold": 9958, "pushRouter": 'UpdateUserInfoPush'}
+// UpdateUserInfoPushGold 更新用户金币  {"gold": 9958, "pushRouter": 'UpdateUserInfoPush'}
 func UpdateUserInfoPushGold(gold int64) any {
 	return map[string]any{
 		"gold":       gold,
@@ -145,7 +145,7 @@ func UpdateUserInfoPushGold(gold int64) any {
 }
 
 //{"type":414,"data":{"bankerChairID":0},"pushRouter":"GameMessagePush"}
-
+// GameBankerPushData 推送当前庄家是谁
 func GameBankerPushData(bankerChairID int) any {
 	return map[string]any{
 		"type": GameBankerPush,
@@ -157,7 +157,7 @@ func GameBankerPushData(bankerChairID int) any {
 }
 
 //{"type":411,"data":{"curBureau":6},"pushRouter":"GameMessagePush"}
-
+// GameBureauPushData 推送当前是第几局
 func GameBureauPushData(curBureau int) any {
 	return map[string]any{
 		"type": GameBureauPush,
@@ -169,7 +169,7 @@ func GameBureauPushData(curBureau int) any {
 }
 
 //{"type":401,"data":{"gameStatus":1,"tick":0},"pushRouter":"GameMessagePush"}
-
+// GameStatusPushData 推送当前游戏状态
 func GameStatusPushData(gameStatus GameStatus, tick int) any {
 	return map[string]any{
 		"type": GameStatusPush,
@@ -180,6 +180,8 @@ func GameStatusPushData(gameStatus GameStatus, tick int) any {
 		"pushRouter": "GameMessagePush",
 	}
 }
+
+// GameSendCardsPushData 推送发牌信息
 func GameSendCardsPushData(handCards [][]int) any {
 	return map[string]any{
 		"type": GameSendCardsPush,
@@ -202,6 +204,7 @@ func GameSendCardsPushData(handCards [][]int) any {
 //    "pushRouter":"GameMessagePush"
 //}
 
+// GamePourScorePushData 推送下分信息
 func GamePourScorePushData(chairID, score, chairScore, scores, t int) any {
 	return map[string]any{
 		"type": GamePourScorePush,
@@ -221,6 +224,8 @@ func GamePourScorePushData(chairID, score, chairScore, scores, t int) any {
 //	   "data":{"round":1},
 //	   "pushRouter":"GameMessagePush"
 //	}
+
+// GameRoundPushData 推送当前轮数
 func GameRoundPushData(round int) any {
 	return map[string]any{
 		"type": GameRoundPush,
@@ -237,6 +242,7 @@ func GameRoundPushData(round int) any {
 //    "pushRouter":"GameMessagePush"
 //}
 
+// GameTurnPushData 推送当前操作玩家
 func GameTurnPushData(curChairID, curScore int) any {
 	return map[string]any{
 		"type": GameTurnPush,
@@ -247,6 +253,8 @@ func GameTurnPushData(curChairID, curScore int) any {
 		"pushRouter": "GameMessagePush",
 	}
 }
+
+// GameLookPushData 推送看牌信息
 func GameLookPushData(chairID int, cards []int, cuopai bool) any {
 	return map[string]any{
 		"type": GameLookPush,
@@ -258,6 +266,8 @@ func GameLookPushData(chairID int, cards []int, cuopai bool) any {
 		"pushRouter": "GameMessagePush",
 	}
 }
+
+// GameComparePushData 推送比牌信息
 func GameComparePushData(fromChairID, toChairID, winChairID, loseChairID int) any {
 	return map[string]any{
 		"type": GameComparePush,
@@ -279,6 +289,7 @@ type GameResult struct {
 	Losers    []int   `json:"losers"`
 }
 
+// GameResultPushData 推送结果信息
 func GameResultPushData(result *GameResult) any {
 	return map[string]any{
 		"type": GameResultPush,
@@ -288,6 +299,8 @@ func GameResultPushData(result *GameResult) any {
 		"pushRouter": "GameMessagePush",
 	}
 }
+
+// GameAbandonPushData 推送弃牌信息
 func GameAbandonPushData(chairID int, userStatus UserStatus) any {
 	return map[string]any{
 		"type": GameAbandonPush,

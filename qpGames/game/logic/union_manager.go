@@ -23,6 +23,7 @@ func NewUnionManager() *UnionManager {
 	}
 }
 
+// GetUnion 根据传入的unionId获取对应的联盟对象
 func (u *UnionManager) GetUnion(unionId int64) *Union {
 	u.Lock()
 	u.Unlock()
@@ -35,8 +36,9 @@ func (u *UnionManager) GetUnion(unionId int64) *Union {
 	return union
 }
 
+// CreateRoomId 生成一个不重复的房间id
 func (u *UnionManager) CreateRoomId() string {
-	//随机数的方式去创建
+	//生成一个随机房间号
 	roomId := u.genRoomId()
 	for _, v := range u.unionList {
 		_, ok := v.RoomList[roomId]
@@ -47,6 +49,7 @@ func (u *UnionManager) CreateRoomId() string {
 	return roomId
 }
 
+// genRoomId 生成一个随机房间号
 func (u *UnionManager) genRoomId() string {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	//房间号是6位数
@@ -57,6 +60,7 @@ func (u *UnionManager) genRoomId() string {
 	return fmt.Sprintf("%d", roomIdInt)
 }
 
+// GetRoomById 根据房间id查找对应的房间
 func (u *UnionManager) GetRoomById(roomId string) *room.Room {
 	for _, v := range u.unionList {
 		r, ok := v.RoomList[roomId]
@@ -67,6 +71,7 @@ func (u *UnionManager) GetRoomById(roomId string) *room.Room {
 	return nil
 }
 
+// JoinRoom 让用户加入指定的房间
 func (u *UnionManager) JoinRoom(session *remote.Session, roomId string, data *entity.User) *msError.Error {
 	for _, v := range u.unionList {
 		r, ok := v.RoomList[roomId]

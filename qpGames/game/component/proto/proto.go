@@ -67,14 +67,16 @@ const (
 	UserChangeSeatPush                          = 420
 )
 
+// UpdateUserInfoPush 更新用户信息
 func UpdateUserInfoPush(roomId string) any {
 	pushMsg := map[string]any{
-		"roomID":     roomId,
-		"pushRouter": "UpdateUserInfoPush",
+		"roomID":     roomId,               //房间id
+		"pushRouter": "UpdateUserInfoPush", //路由信息
 	}
 	return pushMsg
 }
 
+// UserLeaveRoomPushData 用户离开房间
 func UserLeaveRoomPushData(roomUserInfo *RoomUser) any {
 	pushMsg := map[string]any{
 		"type": UserLeaveRoomPush,
@@ -85,17 +87,20 @@ func UserLeaveRoomPushData(roomUserInfo *RoomUser) any {
 	}
 	return pushMsg
 }
+
+// UserReadyPushData 用户准备
 func UserReadyPushData(chairID int) any {
 	pushMsg := map[string]any{
-		"type": UserReadyPush,
+		"type": UserReadyPush, //消息类型
 		"data": map[string]any{
-			"chairID": chairID,
+			"chairID": chairID, //座位id
 		},
 		"pushRouter": "RoomMessagePush",
 	}
 	return pushMsg
 }
 
+// OtherUserEntryRoomPushData 当某个用户进入房间时，通知其他用户房间中新增了一个用户
 func OtherUserEntryRoomPushData(roomUserInfo *RoomUser) any {
 	pushMsg := map[string]any{
 		"type": OtherUserEntryRoomPush,

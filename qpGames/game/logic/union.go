@@ -21,15 +21,16 @@ func (u *Union) CreateRoom(service *service.UserService, session *remote.Session
 	//1. 需要创建一个房间 生成一个房间号
 	roomId := u.m.CreateRoomId()
 	newRoom := room.NewRoom(roomId, req.UnionID, req.GameRule, u)
-	u.RoomList[roomId] = newRoom
-	return newRoom.UserEntryRoom(session, userData)
+	u.RoomList[roomId] = newRoom                    //将新房间加入联盟的房间列表
+	return newRoom.UserEntryRoom(session, userData) //让用户加入新建的房间
 }
 
 func (u *Union) DismissRoom(roomId string) {
 	u.Lock()
 	defer u.Unlock()
-	delete(u.RoomList, roomId)
+	delete(u.RoomList, roomId) //删除指定房间ID对应的房间，表示解散该房间
 }
+
 func NewUnion(m *UnionManager) *Union {
 	return &Union{
 		RoomList: make(map[string]*room.Room),

@@ -21,16 +21,18 @@ type Room struct {
 	users         map[string]*proto.RoomUser
 	RoomCreator   *proto.RoomCreator
 	GameFrame     GameFrame
-	kickSchedules map[string]*time.Timer
+	kickSchedules map[string]*time.Timer //踢出玩家定时器
 	union         base.UnionBase
-	roomDismissed bool
-	gameStarted   bool
+	roomDismissed bool //房间是否已解散
+	gameStarted   bool //游戏是否已开始
 }
 
+// UserReady 用户准备
 func (r *Room) UserReady(uid string, session *remote.Session) {
 	r.userReady(uid, session)
 }
 
+// EndGame 游戏结束
 func (r *Room) EndGame(session *remote.Session) {
 	r.gameStarted = false
 	for k := range r.users {
@@ -38,6 +40,7 @@ func (r *Room) EndGame(session *remote.Session) {
 	}
 }
 
+// UserEntryRoom 用户进入房间
 func (r *Room) UserEntryRoom(session *remote.Session, data *entity.User) *msError.Error {
 	r.RoomCreator = &proto.RoomCreator{
 		Uid: data.Uid,
@@ -64,17 +67,17 @@ func (r *Room) UserEntryRoom(session *remote.Session, data *entity.User) *msErro
 	return nil
 }
 
+// UpdateUserInfoRoomPush 更新用户房间信息
 func (r *Room) UpdateUserInfoRoomPush(session *remote.Session, uid string) {
 	//{roomID: '336842', pushRouter: 'UpdateUserInfoPush'}
 	pushMsg := map[string]any{
 		"roomID":     r.Id,
 		"pushRouter": "UpdateUserInfoPush",
 	}
-	//node节点 nats client，push 通过nats将消息发送给connector服务，connector将消息主动发给客户端
-	//ServerMessagePush
-	session.Push([]string{uid}, pushMsg, "ServerMessagePush")
+	session.Push([]string{uid}, pushMsg, "ServerMessagePush") //推送消息
 }
 
+// SelfEntryRoomPush 告诉用户自己成功进入房间
 func (r *Room) SelfEntryRoomPush(session *remote.Session, uid string) {
 	//{gameType: 1, pushRouter: 'SelfEntryRoomPush'}
 	pushMsg := map[string]any{
@@ -86,13 +89,14 @@ func (r *Room) SelfEntryRoomPush(session *remote.Session, uid string) {
 
 func (r *Room) RoomMessageHandle(session *remote.Session, req request.RoomMessageReq) {
 	if req.Type == proto.UserReadyNotify {
-		r.userReady(session.GetUid(), session)
+		r.userReady(session.GetUid(), session) //准备
 	}
 	if req.Type == proto.GetRoomSceneInfoNotify {
-		r.getRoomSceneInfoPush(session)
+		r.getRoomSceneInfoPush(session) //推送房间场景信息
 	}
 }
 
+// getRoomSceneInfoPush 获取房间场景信息
 func (r *Room) getRoomSceneInfoPush(session *remote.Session) {
 	//
 	userInfoArr := make([]*proto.RoomUser, 0)
@@ -113,17 +117,18 @@ func (r *Room) getRoomSceneInfoPush(session *remote.Session) {
 	session.Push([]string{session.GetUid()}, data, "ServerMessagePush")
 }
 
+// addKickScheduleEvent 如果用户在30秒内没有准备，则自动将该用户踢出房间
 func (r *Room) addKickScheduleEvent(session *remote.Session, uid string) {
 	r.Lock()
 	defer r.Unlock()
 	t, ok := r.kickSchedules[uid]
-	if ok {
+	if ok { //如果已经存在踢出定时器，则先取消之前的定时任务
 		t.Stop()
 		delete(r.kickSchedules, uid)
 	}
 	r.kickSchedules[uid] = time.AfterFunc(30*time.Second, func() {
 		logs.Info("kick 定时执行，代表 用户长时间未准备,uid=%v", uid)
-		//取消定时任务
+		//删除定时器
 		timer, ok := r.kickSchedules[uid]
 		if ok {
 			timer.Stop()
@@ -134,7 +139,7 @@ func (r *Room) addKickScheduleEvent(session *remote.Session, uid string) {
 		if ok {
 			if user.UserStatus < proto.Ready {
 				r.kickUser(user, session)
-				//踢出房间之后，需要判断是否可以解散房间
+				//踢出房间之后，如果房间内没有用户了，则解散房间
 				if len(r.users) == 0 {
 					r.dismissRoom()
 				}
@@ -146,18 +151,20 @@ func (r *Room) addKickScheduleEvent(session *remote.Session, uid string) {
 func (r *Room) ServerMessagePush(users []string, data any, session *remote.Session) {
 	session.Push(users, data, "ServerMessagePush")
 }
+
 func (r *Room) kickUser(user *proto.RoomUser, session *remote.Session) {
 	//将roomId设为空
 	r.ServerMessagePush([]string{user.UserInfo.Uid}, proto.UpdateUserInfoPush(""), session)
-	//通知其他人用户离开房间
+	//通知其他人此用户离开房间
 	users := make([]string, 0)
 	for _, v := range r.users {
 		users = append(users, v.UserInfo.Uid)
 	}
 	r.ServerMessagePush(users, proto.UserLeaveRoomPushData(user), session)
-	delete(r.users, user.UserInfo.Uid)
+	delete(r.users, user.UserInfo.Uid) //删除该用户的房间信息
 }
 
+// dismissRoom 解散房间
 func (r *Room) dismissRoom() {
 	r.Lock()
 	defer r.Unlock()
@@ -165,36 +172,33 @@ func (r *Room) dismissRoom() {
 		return
 	}
 	r.roomDismissed = true
-	//解散 将union当中存储的room信息 删除掉
-	r.cancelAllScheduler()
+	r.cancelAllScheduler() //取消房间内所有的定时任务
 	r.union.DismissRoom(r.Id)
 }
 
+// cancelAllScheduler 将房间所有的任务都取消掉
 func (r *Room) cancelAllScheduler() {
-	//需要将房间所有的任务 都取消掉
 	for uid, v := range r.kickSchedules {
 		v.Stop()
 		delete(r.kickSchedules, uid)
 	}
 }
 
+// userReady 用户准备
 func (r *Room) userReady(uid string, session *remote.Session) {
-	//1. push用户的座次,修改用户的状态，取消定时任务
 	user, ok := r.users[uid]
 	if !ok {
 		return
 	}
 	user.UserStatus = proto.Ready
 	timer, ok := r.kickSchedules[uid]
-	if ok {
+	if ok { //用户一旦准备，就不应该再被自动踢出，所以停止并删除踢人定时器
 		timer.Stop()
 		delete(r.kickSchedules, uid)
-
 	}
 	allUsers := r.AllUsers()
-	r.ServerMessagePush(allUsers, proto.UserReadyPushData(user.ChairID), session)
-	//2. 准备好之后，判断是否需要开始游戏
-	if r.IsStartGame() {
+	r.ServerMessagePush(allUsers, proto.UserReadyPushData(user.ChairID), session) //给所有房间内用户推送某用户已准备状态
+	if r.IsStartGame() {                                                          //判断是否开局
 		r.startGame(session, user)
 	}
 }
@@ -204,6 +208,7 @@ func (r *Room) JoinRoom(session *remote.Session, data *entity.User) *msError.Err
 	return r.UserEntryRoom(session, data)
 }
 
+// OtherUserEntryRoomPush 当某个用户进入房间时，给房间其他的用户推送有新用户加入房间的消息
 func (r *Room) OtherUserEntryRoomPush(session *remote.Session, uid string) {
 	others := make([]string, 0)
 	for _, v := range r.users {
@@ -217,6 +222,7 @@ func (r *Room) OtherUserEntryRoomPush(session *remote.Session, uid string) {
 	}
 }
 
+// AllUsers 获取房间内所有用户uid
 func (r *Room) AllUsers() []string {
 	users := make([]string, 0)
 	for _, v := range r.users {
@@ -225,6 +231,7 @@ func (r *Room) AllUsers() []string {
 	return users
 }
 
+// getEmptyChairID 分配一个房间中还未被占用的座位号
 func (r *Room) getEmptyChairID() int {
 	if len(r.users) == 0 {
 		return 0
@@ -241,6 +248,7 @@ func (r *Room) getEmptyChairID() int {
 	return chairID
 }
 
+// IsStartGame 判断房间是否满足开始游戏的条件
 func (r *Room) IsStartGame() bool {
 	//房间内准备的人数 已经大于等于 最小开始游戏人数
 	userReadyCount := 0
@@ -255,6 +263,7 @@ func (r *Room) IsStartGame() bool {
 	return false
 }
 
+// startGame 开始游戏
 func (r *Room) startGame(session *remote.Session, user *proto.RoomUser) {
 	if r.gameStarted {
 		return

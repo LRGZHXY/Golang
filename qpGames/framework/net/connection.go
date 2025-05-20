@@ -6,6 +6,7 @@ type Connection interface {
 	GetSession() *Session
 }
 
+// 消息包
 type MsgPack struct {
 	Cid  string
 	Body []byte

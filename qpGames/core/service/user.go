@@ -44,8 +44,8 @@ func (s *UserService) FindAndSaveUserByUid(ctx context.Context, uid string, info
 	return user, nil
 }
 
+// FindUserByUid 根据uid查询用户信息
 func (s *UserService) FindUserByUid(ctx context.Context, uid string) (*entity.User, *msError.Error) {
-	//查询mongo 有 返回 没有 新增
 	user, err := s.userDao.FindUserByUid(ctx, uid)
 	if err != nil {
 		logs.Error("[UserService] FindUserByUid  user err:%v", err)
@@ -54,6 +54,7 @@ func (s *UserService) FindUserByUid(ctx context.Context, uid string) (*entity.Us
 	return user, nil
 }
 
+// UpdateUserAddressByUid 更新用户地址
 func (s *UserService) UpdateUserAddressByUid(uid string, req hall.UpdateUserAddressReq) error {
 	user := &entity.User{ //构建user实体
 		Uid:      uid,

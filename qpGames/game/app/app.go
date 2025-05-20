@@ -24,22 +24,25 @@ func Run(ctx context.Context, serverId string) error {
 		n.RegisterHandler(route.Register(manager))
 		n.Run(serverId)
 	}()
+	// 定义匿名函数 赋值给变量stop
 	stop := func() {
-		//other
 		exit()
-		time.Sleep(3 * time.Second)
+		time.Sleep(3 * time.Second) //暂停三秒
 		logs.Info("stop app finish")
 	}
-	//期望有一个优雅启停 遇到中断 退出 终止 挂断
-	c := make(chan os.Signal, 1)
+	//优雅启停
+	c := make(chan os.Signal, 1) //创建一个channel,用来接收操作系统信号，缓冲区大小为1
+	//SIGINT	Ctrl+C 中断程序
+	//SIGTERM	kill 命令默认信号
+	//SIGQUIT	quit 信号
+	//SIGHUP	终端挂起（重启提示）
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGHUP)
 	for {
-		select {
-		case <-ctx.Done():
+		select { //同时监听多个channel
+		case <-ctx.Done(): //上下文被取消
 			stop()
-			//time out
 			return nil
-		case s := <-c:
+		case s := <-c: // <- 是接收操作符，表示从 channel 中接收数据
 			switch s {
 			case syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT:
 				stop()

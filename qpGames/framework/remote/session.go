@@ -43,6 +43,7 @@ func (s *Session) GetUid() string {
 	return s.msg.Uid
 }
 
+// Push 推送消息给指定的用户
 func (s *Session) Push(users []string, data any, router string) {
 	msg, _ := json.Marshal(data)
 	pm := pushMsg{
@@ -56,6 +57,7 @@ func (s *Session) Push(users []string, data any, router string) {
 	s.pushChan <- upm
 }
 
+// pushChanRead 读取推送消息通道中的消息，并通过nats发送给目标服务器
 func (s *Session) pushChanRead() {
 	for {
 		select {
@@ -84,6 +86,7 @@ func (s *Session) pushChanRead() {
 	}
 }
 
+// Put 向会话中插入一个键值对
 func (s *Session) Put(key string, value any) {
 	s.Lock()
 	defer s.Unlock()
@@ -91,6 +94,7 @@ func (s *Session) Put(key string, value any) {
 	s.pushSessionChan <- s.data
 }
 
+// pushSessionChanRead 实时把会话数据推送给客户端
 func (s *Session) pushSessionChanRead() {
 	for {
 		select {
@@ -119,6 +123,7 @@ func (s *Session) SetData(data map[string]any) {
 	}
 }
 
+// Get 根据key读取Session中对应的值
 func (s *Session) Get(key string) (any, bool) {
 	s.RLock()
 	defer s.RUnlock()

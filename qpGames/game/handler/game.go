@@ -17,19 +17,21 @@ type GameHandler struct {
 	userService *service.UserService
 }
 
+// RoomMessageNotify 处理用户发往房间的消息请求
 func (h *GameHandler) RoomMessageNotify(session *remote.Session, msg []byte) any {
-	if len(session.GetUid()) <= 0 {
+	if len(session.GetUid()) <= 0 { //是否存在有效的用户ID
 		return common.F(biz.InvalidUsers)
 	}
 	var req request.RoomMessageReq
-	if err := json.Unmarshal(msg, &req); err != nil {
+	if err := json.Unmarshal(msg, &req); err != nil { //解析请求体json
 		return common.F(biz.RequestDataError)
 	}
-	//room去处理这块的业务
+	//检查房间id是否存在于session中
 	roomId, ok := session.Get("roomId")
 	if !ok {
 		return common.F(biz.NotInRoom)
 	}
+	//通过roomId获取房间对象
 	rm := h.um.GetRoomById(fmt.Sprintf("%v", roomId))
 	if rm == nil {
 		return common.F(biz.NotInRoom)
@@ -38,15 +40,18 @@ func (h *GameHandler) RoomMessageNotify(session *remote.Session, msg []byte) any
 	return nil
 }
 
+// GameMessageNotify 处理客户端发送来的游戏逻辑类消息
 func (h *GameHandler) GameMessageNotify(session *remote.Session, msg []byte) any {
+	//用户是否已登录
 	if len(session.GetUid()) <= 0 {
 		return common.F(biz.InvalidUsers)
 	}
-	//room去处理这块的业务
+	//获取房间id
 	roomId, ok := session.Get("roomId")
 	if !ok {
 		return common.F(biz.NotInRoom)
 	}
+	//获取房间对象
 	rm := h.um.GetRoomById(fmt.Sprintf("%v", roomId))
 	if rm == nil {
 		return common.F(biz.NotInRoom)

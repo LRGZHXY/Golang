@@ -2,6 +2,7 @@ package proto
 
 import "core/models/entity"
 
+// RoomCreator 房间创建者信息
 type RoomCreator struct {
 	Uid         string      `json:"uid"`
 	CreatorType CreatorType `json:"creatorType"`
@@ -10,15 +11,18 @@ type RoomCreator struct {
 type CreatorType int
 
 const (
-	UserCreatorType  CreatorType = 1
-	UnionCreatorType             = 2
+	UserCreatorType  CreatorType = 1 // 用户创建
+	UnionCreatorType             = 2 // 联盟创建
 )
 
+// RoomUser 房间中的用户信息
 type RoomUser struct {
 	UserInfo   UserInfo   `json:"userInfo"`
-	ChairID    int        `json:"chairID"`
-	UserStatus UserStatus `json:"userStatus"`
+	ChairID    int        `json:"chairID"`    // 座位ID
+	UserStatus UserStatus `json:"userStatus"` // 用户状态
 }
+
+// UserInfo 用户详细信息
 type UserInfo struct {
 	Uid          string `json:"uid"`
 	Nickname     string `json:"nickname"`
@@ -38,13 +42,14 @@ type UserInfo struct {
 type UserStatus int
 
 const (
-	None    UserStatus = 0
-	Ready              = 1
-	Playing            = 2
-	Offline            = 4
-	Dismiss            = 8
+	None    UserStatus = 0 // 初始状态
+	Ready              = 1 // 准备状态
+	Playing            = 2 // 游戏中
+	Offline            = 4 // 离线
+	Dismiss            = 8 // 解散
 )
 
+// ToRoomUser 将实体用户转换为房间用户
 func ToRoomUser(data *entity.User, chairID int) *RoomUser {
 	userInfo := UserInfo{
 		Uid:      data.Uid,

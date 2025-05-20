@@ -244,6 +244,7 @@ func (m *Manager) KickHandler(packet *protocol.Packet, c Connection) error {
 	return nil
 }
 
+// remoteReadChanHandler 处理nats发来的消息
 func (m *Manager) remoteReadChanHandler() {
 	for {
 		select {
@@ -256,7 +257,7 @@ func (m *Manager) remoteReadChanHandler() {
 					continue
 				}
 				if msg.Type == remote.SessionType {
-					//需要特出处理，session类型是存储在connection中的session 并不 推送客户端
+					//需要特出处理，session类型是存储在connection中的session 并不推送给客户端
 					m.setSessionData(msg)
 					continue
 				}
@@ -267,7 +268,7 @@ func (m *Manager) remoteReadChanHandler() {
 						m.Response(&msg)
 					}
 					if msg.Body.Type == protocol.Push {
-						m.RemotePushChan <- &msg
+						m.RemotePushChan <- &msg //推送消息
 					}
 				}
 			}
@@ -286,13 +287,14 @@ func (m *Manager) selectDst(serverType string) (string, error) {
 	return serversConfigs[index].ID, nil
 }
 
+// Response 给客户端发送响应消息
 func (m *Manager) Response(msg *remote.Msg) {
 	connection, ok := m.clients[msg.Cid]
 	if !ok {
 		logs.Info("%s client down，uid=%s", msg.Cid, msg.Uid)
 		return
 	}
-	buf, err := protocol.MessageEncode(msg.Body)
+	buf, err := protocol.MessageEncode(msg.Body) //编码
 	if err != nil {
 		logs.Error("Response MessageEncode err:%v", err)
 		return
@@ -302,17 +304,18 @@ func (m *Manager) Response(msg *remote.Msg) {
 		logs.Error("Response Encode err:%v", err)
 		return
 	}
-	if msg.Body.Type == protocol.Push {
+	if msg.Body.Type == protocol.Push { //判断该连接的Session.Uid是否在需要推送的用户uid列表中
 		for _, v := range m.clients {
 			if utils.Contains(msg.PushUser, v.GetSession().Uid) {
 				v.SendMessage(res)
 			}
 		}
 	} else {
-		connection.SendMessage(res)
+		connection.SendMessage(res) //只发给指定的connection
 	}
 }
 
+// remotePushChanHandler 持续读取远程推送消息
 func (m *Manager) remotePushChanHandler() {
 	for {
 		select {
@@ -327,6 +330,7 @@ func (m *Manager) remotePushChanHandler() {
 	}
 }
 
+// setSessionData 根据远程消息设置某连接的Session数据
 func (m *Manager) setSessionData(msg remote.Msg) {
 	m.RLock()
 	defer m.RUnlock()
