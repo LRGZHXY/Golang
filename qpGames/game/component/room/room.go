@@ -294,7 +294,7 @@ func NewRoom(id string, unionID int64, rule proto.GameRule, u base.UnionBase) *R
 		r.GameFrame = sz.NewGameFrame(rule, r)
 	}
 	if rule.GameType == int(proto.HongZhong) {
-		r.GameFrame = mj.NewGameFrame(rule, r)
+		r.GameFrame = mj.NewGameFrame(rule, r) // !!!!!
 	}
 	return r
 }

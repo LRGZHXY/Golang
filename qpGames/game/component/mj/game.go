@@ -5,6 +5,7 @@ import (
 	"common/utils"
 	"framework/remote"
 	"game/component/base"
+	"game/component/mj/mp"
 	"game/component/proto"
 	"github.com/jinzhu/copier"
 	"time"
@@ -23,13 +24,13 @@ func (g *GameFrame) GetGameData(session *remote.Session) any {
 	chairID := g.r.GetUsers()[session.GetUid()].ChairID
 	var gameData GameData
 	copier.CopyWithOption(&gameData, g.gameData, copier.Option{IgnoreEmpty: true, DeepCopy: true}) //拷贝原始游戏数据
-	handCards := make([][]CardID, g.gameData.ChairCount)
+	handCards := make([][]mp.CardID, g.gameData.ChairCount)
 	for i := range gameData.HandCards {
 		if i == chairID { //自己的牌
 			handCards[i] = gameData.HandCards[i]
 		} else {
 			//每张牌置为36（表示看不见）
-			handCards[i] = make([]CardID, len(gameData.HandCards[i]))
+			handCards[i] = make([]mp.CardID, len(gameData.HandCards[i]))
 			for j := range g.gameData.HandCards[i] {
 				handCards[i][j] = 36
 			}
@@ -104,12 +105,12 @@ func (g *GameFrame) sendHandCards(session *remote.Session) {
 		g.gameData.HandCards[i] = g.logic.getCards(13) //给每位玩家发13张牌
 	}
 	for i := 0; i < g.gameData.ChairCount; i++ {
-		handCards := make([][]CardID, g.gameData.ChairCount)
+		handCards := make([][]mp.CardID, g.gameData.ChairCount)
 		for j := 0; j < g.gameData.ChairCount; j++ {
 			if i == j { //为每个玩家构造一个只包含自己手牌，其他人手牌全部隐藏
 				handCards[i] = g.gameData.HandCards[i]
 			} else {
-				handCards[j] = make([]CardID, len(g.gameData.HandCards[j]))
+				handCards[j] = make([]mp.CardID, len(g.gameData.HandCards[j]))
 				for k := range g.gameData.HandCards[j] {
 					handCards[j][k] = 36
 				}
@@ -168,10 +169,14 @@ func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 	g.sendData(GameRestCardsCountPushData(restCardsCount), session)
 }
 
-func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card CardID) []OperateType {
+func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card mp.CardID) []OperateType {
 	//需要获取用户可操作的行为，比如 弃牌 碰牌 杠牌 胡牌等
 	//TODO
 	var operateArray = []OperateType{Qi}
+	if g.logic.canHu(g.gameData.HandCards[chairID], -1) {
+		operateArray = append(operateArray, HuZhi) //自己拿牌
+	}
+
 	return operateArray
 }
 
@@ -188,7 +193,7 @@ func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {
 func initGameData(rule proto.GameRule) *GameData {
 	g := new(GameData)
 	g.ChairCount = rule.MaxPlayerCount //座位数
-	g.HandCards = make([][]CardID, g.ChairCount)
+	g.HandCards = make([][]mp.CardID, g.ChairCount)
 	g.GameStatus = GameStatusNone
 	g.OperateRecord = make([]OperateRecord, 0)
 	g.OperateArrays = make([][]OperateType, g.ChairCount)

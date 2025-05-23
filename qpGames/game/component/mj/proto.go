@@ -1,5 +1,9 @@
 package mj
 
+import (
+	"game/component/mj/mp"
+)
+
 type MessageReq struct {
 	Type int         `json:"type"`
 	Data MessageData `json:"data"`
@@ -17,7 +21,7 @@ type GameData struct {
 	MaxBureau      int             `json:"maxBureau"`      //最大局数
 	CurChairID     int             `json:"curChairID"`     //当前玩家
 	UserTrustArray []int           `json:"userTrustArray"` //托管
-	HandCards      [][]CardID      `json:"handCards"`      //手牌
+	HandCards      [][]mp.CardID   `json:"handCards"`      //手牌
 	OperateArrays  [][]OperateType `json:"operateArrays"`  //操作
 	OperateRecord  []OperateRecord `json:"operateRecord"`  //操作记录
 	RestCardsCount int             `json:"restCardsCount"` //剩余牌数
@@ -40,7 +44,7 @@ type MyMaCard struct {
 }
 type OperateRecord struct {
 	ChairID int         `json:"chairID"`
-	Card    CardID      `json:"card"`
+	Card    mp.CardID   `json:"card"`
 	Operate OperateType `json:"operate"`
 }
 type OperateType int
@@ -150,7 +154,7 @@ func GameDicesPushData(dice1, dice2 int) any {
 }
 
 // GameSendCardsPushData 推送玩家初始手牌
-func GameSendCardsPushData(handCards [][]CardID, chairID int) any {
+func GameSendCardsPushData(handCards [][]mp.CardID, chairID int) any {
 	return map[string]any{
 		"type": GameSendCardsPush,
 		"data": map[string]any{
@@ -184,7 +188,7 @@ func GameBureauPushData(curBureau int) any {
 }
 
 // GameTurnPushData 推送轮到某个玩家操作的信息
-func GameTurnPushData(chairID int, card CardID, tick int, operateArray []OperateType) any {
+func GameTurnPushData(chairID int, card mp.CardID, tick int, operateArray []OperateType) any {
 	return map[string]any{
 		"type": GameTurnPush,
 		"data": map[string]any{
