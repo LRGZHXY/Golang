@@ -102,6 +102,35 @@ func (l *Logic) canHu(cards []mp.CardID, card mp.CardID) bool {
 	return l.huLogic.CheckHu(cards, []mp.CardID{Zhong}, card)
 }
 
+// getOperateArray 判断玩家可以进行的操作
+// cards:玩家当前手牌  card:其他人刚打出的牌
+func (l *Logic) getOperateArray(cards []mp.CardID, card mp.CardID) []OperateType {
+	operateArray := make([]OperateType, 0)
+	if card < 0 && card > 35 { // !!!
+		return operateArray
+	}
+	//判断碰 已经有两个相同的了 如果card和这两个一样 能凑成三个一样的
+	sameCount := 0
+	for _, v := range cards {
+		if v == card {
+			sameCount++
+		}
+	}
+	if sameCount >= 2 {
+		operateArray = append(operateArray, Peng) //碰
+	}
+	if sameCount >= 3 {
+		operateArray = append(operateArray, GangChi) //杠
+	}
+	if l.canHu(cards, card) {
+		operateArray = append(operateArray, HuChi) //胡
+	}
+	if len(operateArray) > 0 {
+		operateArray = append(operateArray, Guo) //过（跳过不操作）
+	}
+	return operateArray
+}
+
 func NewLogic(gameType GameType, qidui bool) *Logic {
 	return &Logic{
 		gameType: gameType,

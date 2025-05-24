@@ -9,10 +9,12 @@ import (
 	"game/component/mj/mp"
 	"game/component/proto"
 	"github.com/jinzhu/copier"
+	"sync"
 	"time"
 )
 
 type GameFrame struct {
+	sync.RWMutex
 	r        base.RoomFrame
 	gameRule proto.GameRule
 	gameData *GameData
@@ -217,6 +219,8 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 
 // delCards 删除牌
 func (g *GameFrame) delCards(cards []mp.CardID, card mp.CardID, times int) []mp.CardID { //times删除几张牌
+	g.Lock()
+	defer g.Unlock()
 	for i, v := range cards {
 		if v == card && times > 0 {
 			cards = append(cards[:i], cards[i+1:]...) //合并两个切片，相当于删除索引为i的牌
@@ -227,10 +231,27 @@ func (g *GameFrame) delCards(cards []mp.CardID, card mp.CardID, times int) []mp.
 }
 
 // nextTurn 轮到下一个玩家
-func (g *GameFrame) nextTurn(card mp.CardID, session *remote.Session) {
-	//简单的直接让下一个用户进行摸排牌
-	nextTurnID := (g.gameData.CurChairID + 1) % g.gameData.ChairCount // (当前玩家ID + 1) % 总玩家数
-	g.setTurn(nextTurnID, session)
+func (g *GameFrame) nextTurn(lastCard mp.CardID, session *remote.Session) {
+	//在下一个用户摸牌之前，需要判断其他玩家是否有人可以进行碰 杠 胡 等操作
+	hasOtherOperate := false
+	if lastCard > 0 && lastCard < 36 {
+		for i := 0; i < g.gameData.ChairCount; i++ {
+			if i == g.gameData.CurChairID {
+				continue //跳过当前出牌的玩家（不能对自己刚打出的牌进行操作）
+			}
+			operateArray := g.logic.getOperateArray(g.gameData.HandCards[i], lastCard)
+			if len(operateArray) > 0 { //该玩家可以进行某些操作
+				hasOtherOperate = true
+				g.sendData(GameTurnPushData(i, lastCard, OperateTime, operateArray), session)
+				g.gameData.OperateArrays[i] = operateArray
+			}
+		}
+	}
+	if !hasOtherOperate {
+		//直接让下一个用户进行摸排牌
+		nextTurnID := (g.gameData.CurChairID + 1) % g.gameData.ChairCount // (当前玩家ID + 1) % 总玩家数
+		g.setTurn(nextTurnID, session)
+	}
 }
 
 func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {
