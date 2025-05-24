@@ -15,10 +15,11 @@ import (
 
 type GameFrame struct {
 	sync.RWMutex
-	r        base.RoomFrame
-	gameRule proto.GameRule
-	gameData *GameData
-	logic    *Logic
+	r             base.RoomFrame
+	gameRule      proto.GameRule
+	gameData      *GameData
+	logic         *Logic
+	testCardArray []mp.CardID
 }
 
 func (g *GameFrame) GetGameData(session *remote.Session) any {
@@ -82,6 +83,8 @@ func (g GameFrame) GameMessageHandle(user *proto.RoomUser, session *remote.Sessi
 		g.onGameChat(user, session, req.Data)
 	} else if req.Type == GameTurnOperateNotify { //玩家操作
 		g.onGameTurnOperate(user, session, req.Data)
+	} else if req.Type == GameGetCardNotify { //拿测试的牌
+		g.onGetCard(user, session, req.Data)
 	}
 }
 
@@ -159,13 +162,23 @@ func (g *GameFrame) getUserByChairID(chairID int) *proto.RoomUser {
 func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 	g.gameData.CurChairID = chairID
 	if len(g.gameData.HandCards[chairID]) >= 14 { //牌不能大于14
-		logs.Warn("已经拿过牌了")
+		logs.Warn("已经拿过牌了,chairID:%d", chairID)
 		return
 	}
-	card := g.logic.getCards(1)[0] //抽牌
-	if chairID == 0 {
-		card = mp.Wan1 //抽到的牌
+	card := g.testCardArray[chairID] //测试牌
+	if card > 0 && card < 36 {
+		//从牌堆中拿指定的牌
+		card = g.logic.getCard(card)
+		g.testCardArray[chairID] = 0 //将测试牌数组该位置清零，避免下次再继续使用
 	}
+	if card <= 0 || card >= 36 {
+		cards := g.logic.getCards(1) //抽牌
+		if cards == nil || len(cards) == 0 {
+			return
+		}
+		card = cards[0]
+	}
+
 	g.gameData.HandCards[chairID] = append(g.gameData.HandCards[chairID], card)
 	operateArray := g.getMyOperateArray(session, chairID, card)
 	for i := 0; i < g.gameData.ChairCount; i++ {
@@ -191,10 +204,18 @@ func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card
 	//需要获取用户可操作的行为，比如 弃牌 碰牌 杠牌 胡牌等
 	//TODO
 	var operateArray = []OperateType{Qi}
-	if g.logic.canHu(g.gameData.HandCards[chairID], -1) {
-		operateArray = append(operateArray, HuZi) //自己拿牌
+	if g.logic.canHu(g.gameData.HandCards[chairID], -1) { //自摸胡
+		operateArray = append(operateArray, HuZi)
 	}
-
+	cardCount := 0
+	for _, v := range g.gameData.HandCards[chairID] {
+		if v == card {
+			cardCount++ //新摸的牌在手牌中出现的次数
+		}
+	}
+	if cardCount == 4 { //自摸杠
+		operateArray = append(operateArray, GangZi)
+	}
 	return operateArray
 }
 
@@ -213,6 +234,12 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
 		g.gameData.OperateArrays[user.ChairID] = nil //清空该玩家的操作选项
 		g.nextTurn(data.Card, session)               //轮到下一个玩家
+	} else if data.Operate == Guo {
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		//TODO 如果牌是14 先去弃牌 然后才能做其他的
+		//继续操作
+		g.setTurn(user.ChairID, session)
 	} else if data.Operate == Peng { //碰
 		if data.Card == 0 { //客户端未提供要碰的牌
 			length := len(g.gameData.OperateRecord)
@@ -275,11 +302,17 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 		g.gameData.CurChairID = user.ChairID //出牌
 		g.gameEnd(data.Operate, session)
 	} else if data.Operate == GangZi { //自摸杠
-		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
-		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
-		//处于14张牌 杠了之后 不需要再次弃牌了
-		/*g.gameData.OperateArrays[user.ChairID] = nil
-		g.sendData(GameTurnPushData(user.ChairID, 0, OperateTime, g.gameData.OperateArrays[user.ChairID]), session)*/
+		card := g.gameData.HandCards[user.ChairID][len(g.gameData.HandCards[user.ChairID])-1] //取刚摸的牌
+		//自摸杠是暗杠 其他玩家看不到杠的牌
+		for i := 0; i < g.gameData.ChairCount; i++ {
+			if i == user.ChairID { //当前执行杠操作的玩家
+				g.sendDataUsers([]string{g.getUserByChairID(i).UserInfo.Uid}, GameTurnOperatePushData(user.ChairID, card, data.Operate, true), session)
+			} else {
+				g.sendDataUsers([]string{g.getUserByChairID(i).UserInfo.Uid}, GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+			}
+		}
+		g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], card, 4)
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, card, data.Operate})
 		//继续操作
 		g.setTurn(user.ChairID, session)
 	}
@@ -290,13 +323,22 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 func (g *GameFrame) delCards(cards []mp.CardID, card mp.CardID, times int) []mp.CardID { //times删除几张牌
 	g.Lock()
 	defer g.Unlock()
-	for i, v := range cards {
-		if v == card && times > 0 {
-			cards = append(cards[:i], cards[i+1:]...) //合并两个切片，相当于删除索引为i的牌
-			times--
+	newCards := make([]mp.CardID, 0)
+	//循环删除多个元素 有越界风险
+	count := 0
+	for _, v := range cards {
+		if v != card {
+			newCards = append(newCards, v) //当前牌不是目标牌，直接加入新数组
+		} else { //是目标牌
+			if count == times {
+				newCards = append(newCards, v) //已经删够times次，保留
+			} else { //删除
+				count++
+				continue
+			}
 		}
 	}
-	return cards
+	return newCards
 }
 
 // nextTurn 轮到下一个玩家
@@ -376,13 +418,19 @@ func (g *GameFrame) resetGame(session *remote.Session) {
 	g.gameData.Result = nil
 }
 
+// onGetCard 记录玩家手动指定的测试牌
+func (g *GameFrame) onGetCard(user *proto.RoomUser, session *remote.Session, data MessageData) {
+	g.testCardArray[user.ChairID] = data.Card //将客户端传来的牌data.Card存储到g.testCardArray中
+}
+
 func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {
 	gameData := initGameData(rule)
 	return &GameFrame{
-		r:        r,
-		gameRule: rule,
-		gameData: gameData,
-		logic:    NewLogic(GameType(rule.GameFrameType), rule.Qidui),
+		r:             r,
+		gameRule:      rule,
+		gameData:      gameData,
+		logic:         NewLogic(GameType(rule.GameFrameType), rule.Qidui),
+		testCardArray: make([]mp.CardID, gameData.ChairCount),
 	}
 }
 

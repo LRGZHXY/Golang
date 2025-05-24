@@ -136,6 +136,16 @@ func (l *Logic) getRestCards() []mp.CardID {
 	return l.cards
 }
 
+// getCard 在牌堆中查找某张牌，找到后将其移除并返回
+func (l *Logic) getCard(card mp.CardID) mp.CardID {
+	indexOf := alg.IndexOf(l.cards, card)
+	if indexOf == -1 {
+		return 0
+	}
+	l.cards = append(l.cards[:indexOf], l.cards[indexOf+1:]...)
+	return card
+}
+
 func NewLogic(gameType GameType, qidui bool) *Logic {
 	return &Logic{
 		gameType: gameType,
