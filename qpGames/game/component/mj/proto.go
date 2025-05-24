@@ -9,10 +9,12 @@ type MessageReq struct {
 	Data MessageData `json:"data"`
 }
 type MessageData struct {
-	ChairID     int    `json:"chairID"`
-	Type        int    `json:"type"`
-	Msg         string `json:"msg"`
-	RecipientID int    `json:"recipientID"`
+	ChairID     int         `json:"chairID"`
+	Type        int         `json:"type"`
+	Msg         string      `json:"msg"`
+	RecipientID int         `json:"recipientID"`
+	Card        mp.CardID   `json:"card"`
+	Operate     OperateType `json:"operate"`
 }
 
 type GameData struct {
@@ -214,6 +216,20 @@ func GameChatPushData(chairID int, t int, msg string, recipientID int) any {
 			"type":        t,           //消息类型
 			"msg":         msg,         //消息内容
 			"recipientID": recipientID, //接收者ID
+		},
+		"pushRouter": "GameMessagePush",
+	}
+}
+
+// GameTurnOperatePushData 推送玩家的操作
+func GameTurnOperatePushData(chairID int, card mp.CardID, operate OperateType, success bool) any {
+	return map[string]any{
+		"type": GameTurnOperatePush,
+		"data": map[string]any{
+			"chairID": chairID, //玩家座位号
+			"card":    card,    //操作的牌
+			"operate": operate, //操作类型
+			"success": success, //是否操作成功
 		},
 		"pushRouter": "GameMessagePush",
 	}

@@ -78,6 +78,8 @@ func (g GameFrame) GameMessageHandle(user *proto.RoomUser, session *remote.Sessi
 	json.Unmarshal(msg, &req)
 	if req.Type == GameChatNotify { //聊天
 		g.onGameChat(user, session, req.Data)
+	} else if req.Type == GameTurnOperateNotify { //玩家操作
+		g.onGameTurnOperate(user, session, req.Data)
 	}
 }
 
@@ -108,12 +110,12 @@ func (g *GameFrame) sendHandCards(session *remote.Session) {
 	g.logic.washCards() //洗牌
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		g.gameData.HandCards[i] = g.logic.getCards(13) //给每位玩家发13张牌
-		if i == 0 {
+		/*if i == 0 {
 			g.gameData.HandCards[i] = []mp.CardID{ //给第一个玩家发的牌
 				mp.Wan1, mp.Wan1, mp.Wan1, mp.Wan2, mp.Wan3, mp.Wan5, mp.Wan5, mp.Wan5,
 				mp.Tong1, mp.Tong1, mp.Tong1, mp.Zhong, mp.Tong4,
 			}
-		}
+		}*/
 	}
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		handCards := make([][]mp.CardID, g.gameData.ChairCount)
@@ -159,15 +161,15 @@ func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 		return
 	}
 	card := g.logic.getCards(1)[0] //抽牌
-	if chairID == 0 {
+	/*if chairID == 0 {
 		card = mp.Tong2 //抽到的牌是筒2
-	}
+	}*/
 	g.gameData.HandCards[chairID] = append(g.gameData.HandCards[chairID], card)
 	operateArray := g.getMyOperateArray(session, chairID, card)
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		uid := g.getUserByChairID(i).UserInfo.Uid
 		if i == chairID { // 给当前玩家发明牌
-			g.sendDataUsers([]string{uid}, GameTurnPushData(i, card, OperateTime, operateArray), session)
+			g.sendDataUsers([]string{uid}, GameTurnPushData(chairID, card, OperateTime, operateArray), session)
 			g.gameData.OperateArrays[i] = operateArray
 			g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{
 				ChairID: i,
@@ -176,7 +178,7 @@ func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 			})
 		} else {
 			//给其他玩家发暗牌
-			g.sendDataUsers([]string{uid}, GameTurnPushData(i, 36, OperateTime, operateArray), session)
+			g.sendDataUsers([]string{uid}, GameTurnPushData(chairID, 36, OperateTime, operateArray), session)
 		}
 	}
 	restCardsCount := g.logic.getRestCardsCount() //剩余牌数推送
@@ -197,6 +199,38 @@ func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card
 // oneGameChat 聊天消息转发
 func (g *GameFrame) onGameChat(user *proto.RoomUser, session *remote.Session, data MessageData) {
 	g.sendData(GameChatPushData(user.ChairID, data.Type, data.Msg, data.RecipientID), session)
+}
+
+func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Session, data MessageData) {
+	if data.Operate == Qi { //弃牌
+		//向所有人通告 当前用户做了什么操作
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		//删除弃掉的牌
+		g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], data.Card, 1)
+		//记录本次操作
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		g.gameData.OperateArrays[user.ChairID] = nil //清空该玩家的操作选项
+		g.nextTurn(data.Card, session)               //轮到下一个玩家
+	}
+
+}
+
+// delCards 删除牌
+func (g *GameFrame) delCards(cards []mp.CardID, card mp.CardID, times int) []mp.CardID { //times删除几张牌
+	for i, v := range cards {
+		if v == card && times > 0 {
+			cards = append(cards[:i], cards[i+1:]...) //合并两个切片，相当于删除索引为i的牌
+			times--
+		}
+	}
+	return cards
+}
+
+// nextTurn 轮到下一个玩家
+func (g *GameFrame) nextTurn(card mp.CardID, session *remote.Session) {
+	//简单的直接让下一个用户进行摸排牌
+	nextTurnID := (g.gameData.CurChairID + 1) % g.gameData.ChairCount // (当前玩家ID + 1) % 总玩家数
+	g.setTurn(nextTurnID, session)
 }
 
 func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {
