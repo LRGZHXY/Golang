@@ -3,6 +3,7 @@ package mj
 import (
 	"common/logs"
 	"common/utils"
+	"encoding/json"
 	"framework/remote"
 	"game/component/base"
 	"game/component/mj/mp"
@@ -71,9 +72,13 @@ func (g GameFrame) StartGame(session *remote.Session, user *proto.RoomUser) {
 	g.sendData(GameBureauPushData(g.gameData.CurBureau), session)
 }
 
+// GameMessageHandle 处理客户端发送来的游戏消息
 func (g GameFrame) GameMessageHandle(user *proto.RoomUser, session *remote.Session, msg []byte) {
-	//TODO implement me
-	panic("implement me")
+	var req MessageReq
+	json.Unmarshal(msg, &req)
+	if req.Type == GameChatNotify { //聊天
+		g.onGameChat(user, session, req.Data)
+	}
 }
 
 // sendDataUsers 向指定的users推送消息
@@ -103,6 +108,12 @@ func (g *GameFrame) sendHandCards(session *remote.Session) {
 	g.logic.washCards() //洗牌
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		g.gameData.HandCards[i] = g.logic.getCards(13) //给每位玩家发13张牌
+		if i == 0 {
+			g.gameData.HandCards[i] = []mp.CardID{ //给第一个玩家发的牌
+				mp.Wan1, mp.Wan1, mp.Wan1, mp.Wan2, mp.Wan3, mp.Wan5, mp.Wan5, mp.Wan5,
+				mp.Tong1, mp.Tong1, mp.Tong1, mp.Zhong, mp.Tong4,
+			}
+		}
 	}
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		handCards := make([][]mp.CardID, g.gameData.ChairCount)
@@ -148,6 +159,9 @@ func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 		return
 	}
 	card := g.logic.getCards(1)[0] //抽牌
+	if chairID == 0 {
+		card = mp.Tong2 //抽到的牌是筒2
+	}
 	g.gameData.HandCards[chairID] = append(g.gameData.HandCards[chairID], card)
 	operateArray := g.getMyOperateArray(session, chairID, card)
 	for i := 0; i < g.gameData.ChairCount; i++ {
@@ -178,6 +192,11 @@ func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card
 	}
 
 	return operateArray
+}
+
+// oneGameChat 聊天消息转发
+func (g *GameFrame) onGameChat(user *proto.RoomUser, session *remote.Session, data MessageData) {
+	g.sendData(GameChatPushData(user.ChairID, data.Type, data.Msg, data.RecipientID), session)
 }
 
 func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {

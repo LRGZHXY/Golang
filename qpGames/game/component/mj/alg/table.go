@@ -1,7 +1,6 @@
 package alg
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -23,12 +22,14 @@ type Table struct {
 }
 
 func NewTable() *Table {
-	return &Table{
+	t := &Table{
 		keyDic:        make(map[string]bool),
 		keyGuiDic:     make(map[int]map[string]bool),
 		keyFengDic:    make(map[string]bool),
 		keyFengGuiDic: make(map[int]map[string]bool),
 	}
+	t.gen()
+	return t
 }
 
 // gen 生成字典表
@@ -125,7 +126,8 @@ func (t *Table) generateKey(cards []int) string {
 }
 
 func (t *Table) save() {
-	fmt.Println(t.keyDic)
+	//fmt.Println(t.keyDic)
+	//TODO
 }
 
 // genTableGui 生成有鬼的字典表
@@ -200,4 +202,35 @@ func (t *Table) tryAdd(cards []int, guiCount int, feng bool) bool {
 	}
 	t.keyGuiDic[guiCount][key] = true
 	return true
+}
+
+// findCards 查表判断牌型是否能胡
+func (t *Table) findCards(cards []int, guiCount int, feng bool) bool {
+	key := t.generateKey(cards)
+	if guiCount > 0 { //有鬼牌
+		if feng {
+			_, ok := t.keyFengGuiDic[guiCount][key]
+			if ok {
+				return true
+			}
+		} else {
+			_, ok := t.keyGuiDic[guiCount][key]
+			if ok {
+				return true
+			}
+		}
+	} else {
+		if feng {
+			_, ok := t.keyFengDic[key]
+			if ok {
+				return true
+			}
+		} else {
+			_, ok := t.keyDic[key]
+			if ok {
+				return true
+			}
+		}
+	}
+	return false
 }
