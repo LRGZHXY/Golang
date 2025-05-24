@@ -112,12 +112,12 @@ func (g *GameFrame) sendHandCards(session *remote.Session) {
 	g.logic.washCards() //洗牌
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		g.gameData.HandCards[i] = g.logic.getCards(13) //给每位玩家发13张牌
-		/*if i == 0 {
+		if i == 1 {
 			g.gameData.HandCards[i] = []mp.CardID{ //给第一个玩家发的牌
 				mp.Wan1, mp.Wan1, mp.Wan1, mp.Wan2, mp.Wan3, mp.Wan5, mp.Wan5, mp.Wan5,
 				mp.Tong1, mp.Tong1, mp.Tong1, mp.Zhong, mp.Tong4,
 			}
-		}*/
+		}
 	}
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		handCards := make([][]mp.CardID, g.gameData.ChairCount)
@@ -163,9 +163,9 @@ func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 		return
 	}
 	card := g.logic.getCards(1)[0] //抽牌
-	/*if chairID == 0 {
-		card = mp.Tong2 //抽到的牌是筒2
-	}*/
+	if chairID == 0 {
+		card = mp.Wan1 //抽到的牌
+	}
 	g.gameData.HandCards[chairID] = append(g.gameData.HandCards[chairID], card)
 	operateArray := g.getMyOperateArray(session, chairID, card)
 	for i := 0; i < g.gameData.ChairCount; i++ {
@@ -192,7 +192,7 @@ func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card
 	//TODO
 	var operateArray = []OperateType{Qi}
 	if g.logic.canHu(g.gameData.HandCards[chairID], -1) {
-		operateArray = append(operateArray, HuZhi) //自己拿牌
+		operateArray = append(operateArray, HuZi) //自己拿牌
 	}
 
 	return operateArray
@@ -224,14 +224,64 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 			}
 		}
 		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
-		g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card) //给当前玩家的牌加上要碰的牌
-		//碰相当于损失了2张牌
-		//g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], data.Card, 2)
+		//g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card) //给当前玩家的牌加上要碰的牌
+		//碰相当于损失了2张牌 当用户重新进入房间时 加载gameData handcards中碰的牌放在左下角
+		g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], data.Card, 2)
 		//记录本次操作
 		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
 		g.gameData.OperateArrays[user.ChairID] = []OperateType{Qi} //玩家碰牌后必须出一张牌
 		g.sendData(GameTurnPushData(user.ChairID, 0, OperateTime, g.gameData.OperateArrays[user.ChairID]), session)
 		g.gameData.CurChairID = user.ChairID //碰后需要自己出牌
+	} else if data.Operate == GangChi { //杠
+		if data.Card == 0 { //客户端未提供要杠的牌
+			length := len(g.gameData.OperateRecord)
+			if length == 0 {
+				//上一个玩家打出的牌操作记录为空
+				logs.Error("用户吃杠操作，但是没有上一个操作记录")
+			} else {
+				data.Card = g.gameData.OperateRecord[length-1].Card //找到上一个玩家打出的那张牌
+			}
+		}
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		//g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card) //给当前玩家的牌加上要杠的牌
+		//杠相当于损失了3张牌 当用户重新进入房间时 加载gameData handcards中杠的牌放在左下角
+		g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], data.Card, 3)
+		//记录本次操作
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		g.gameData.OperateArrays[user.ChairID] = []OperateType{Qi} //玩家杠牌后必须出一张牌
+		g.sendData(GameTurnPushData(user.ChairID, 0, OperateTime, g.gameData.OperateArrays[user.ChairID]), session)
+		g.gameData.CurChairID = user.ChairID //杠后需要自己出牌
+	} else if data.Operate == HuChi { //胡别人打出的牌（吃胡）
+		if data.Card == 0 { //客户端未提供相应的牌
+			length := len(g.gameData.OperateRecord)
+			if length == 0 {
+				//上一个玩家打出的牌操作记录为空
+				logs.Error("用户吃胡操作，但是没有上一个操作记录")
+			} else {
+				data.Card = g.gameData.OperateRecord[length-1].Card //找到上一个玩家打出的那张牌
+			}
+		}
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card) //把胡的牌加入手牌
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		g.gameData.OperateArrays[user.ChairID] = nil
+		g.gameData.CurChairID = user.ChairID //出牌
+		g.gameEnd(data.Operate, session)
+	} else if data.Operate == HuZi { //自己摸到牌后胡牌
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		//g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card)
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		g.gameData.OperateArrays[user.ChairID] = nil
+		g.gameData.CurChairID = user.ChairID //出牌
+		g.gameEnd(data.Operate, session)
+	} else if data.Operate == GangZi { //自摸杠
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		//处于14张牌 杠了之后 不需要再次弃牌了
+		/*g.gameData.OperateArrays[user.ChairID] = nil
+		g.sendData(GameTurnPushData(user.ChairID, 0, OperateTime, g.gameData.OperateArrays[user.ChairID]), session)*/
+		//继续操作
+		g.setTurn(user.ChairID, session)
 	}
 
 }
@@ -271,6 +321,59 @@ func (g *GameFrame) nextTurn(lastCard mp.CardID, session *remote.Session) {
 		nextTurnID := (g.gameData.CurChairID + 1) % g.gameData.ChairCount // (当前玩家ID + 1) % 总玩家数
 		g.setTurn(nextTurnID, session)
 	}
+}
+
+// gameEnd 游戏结束
+func (g *GameFrame) gameEnd(operate OperateType, session *remote.Session) {
+	g.gameData.GameStatus = Result //结算
+	g.sendData(GameStatusPushData(g.gameData.GameStatus, 0), session)
+	scores := make([]int, g.gameData.ChairCount)
+	//结算推送
+	/*for i := 0; i < g.gameData.ChairCount; i++ {
+
+	}*/
+	l := len(g.gameData.OperateRecord)
+	if l <= 0 {
+		logs.Error("没有操作记录，不可能游戏结束，请检查")
+		return
+	}
+	lastOperateRecord := g.gameData.OperateRecord[l-1]
+	if lastOperateRecord.Operate != HuChi && lastOperateRecord.Operate != HuZi {
+		logs.Error("最后一次操作，不是胡牌，不可能游戏结束，请检查")
+		return
+	}
+	result := GameResult{
+		Scores:          scores,
+		HandCards:       g.gameData.HandCards,
+		RestCards:       g.logic.getRestCards(),
+		WinChairIDArray: []int{lastOperateRecord.ChairID},
+		HuType:          lastOperateRecord.Operate,
+		MyMaCards:       []MyMaCard{},
+		FangGangArray:   []int{},
+	}
+	g.gameData.Result = &result
+	g.sendData(GameResultPushData(result), session) //推送结算结果
+
+	time.AfterFunc(3*time.Second, func() { //延迟3秒重置游戏
+		g.r.EndGame(session)
+		g.resetGame(session)
+	})
+	//倒计时30秒 如果用户未操作 自动准备或者踢出房间
+}
+
+// resetGame 重置游戏数据
+func (g *GameFrame) resetGame(session *remote.Session) {
+	g.gameData.GameStarted = false
+	g.gameData.GameStatus = GameStatusNone
+	g.sendData(GameStatusPushData(g.gameData.GameStatus, 0), session)
+	g.sendData(GameRestCardsCountPushData(g.logic.getRestCardsCount()), session)
+	for i := 0; i < g.gameData.ChairCount; i++ { //清除每个玩家的数据
+		g.gameData.HandCards[i] = nil
+		g.gameData.OperateArrays[i] = nil
+	}
+	g.gameData.OperateRecord = make([]OperateRecord, 0)
+	g.gameData.CurChairID = -1
+	g.gameData.Result = nil
 }
 
 func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {

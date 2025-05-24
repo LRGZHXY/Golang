@@ -31,18 +31,18 @@ type GameData struct {
 	OperateArrays  [][]OperateType `json:"operateArrays"`  //操作
 	OperateRecord  []OperateRecord `json:"operateRecord"`  //操作记录
 	RestCardsCount int             `json:"restCardsCount"` //剩余牌数
-	Result         GameResult      `json:"result"`         //结算
+	Result         *GameResult     `json:"result"`         //结算
 }
 
 type GameResult struct {
-	Scores          []int       `json:"scores"`
-	HandCards       [][]int     `json:"handCards"`
-	MyMaCards       []MyMaCard  `json:"myMaCards"`
-	RestCards       []int       `json:"restCards"`
-	WinChairIDArray []int       `json:"winChairIDArray"`
-	GangChairID     int         `json:"gangChairID"`
-	FangGangArray   []int       `json:"fangGangArray"`
-	HuType          OperateType `json:"huType"`
+	Scores          []int         `json:"scores"`
+	HandCards       [][]mp.CardID `json:"handCards"`
+	MyMaCards       []MyMaCard    `json:"myMaCards"`
+	RestCards       []mp.CardID   `json:"restCards"`
+	WinChairIDArray []int         `json:"winChairIDArray"`
+	GangChairID     int           `json:"gangChairID"`
+	FangGangArray   []int         `json:"fangGangArray"`
+	HuType          OperateType   `json:"huType"`
 }
 type MyMaCard struct {
 	Card int  `json:"card"`
@@ -58,11 +58,11 @@ type OperateType int
 const (
 	OperateTypeNone OperateType = iota
 	HuChi                       //吃胡
-	HuZhi                       //自摸
+	HuZi                        //自摸
 	Peng                        //碰
 	GangChi                     //吃杠
 	GangBu                      //补杠
-	GangZhi                     //自摸杠
+	GangZi                      //自摸杠
 	Guo                         //过
 	Qi                          //弃
 	Get                         //拿牌
@@ -239,6 +239,17 @@ func GameTurnOperatePushData(chairID int, card mp.CardID, operate OperateType, s
 			"card":    c,       //操作的牌
 			"operate": operate, //操作类型
 			"success": success, //是否操作成功
+		},
+		"pushRouter": "GameMessagePush",
+	}
+}
+
+// GameResultPushData 推送游戏结算结果
+func GameResultPushData(result GameResult) any {
+	return map[string]any{
+		"type": GameResultPush,
+		"data": map[string]any{
+			"result": result,
 		},
 		"pushRouter": "GameMessagePush",
 	}
