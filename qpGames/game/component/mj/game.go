@@ -213,6 +213,25 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
 		g.gameData.OperateArrays[user.ChairID] = nil //清空该玩家的操作选项
 		g.nextTurn(data.Card, session)               //轮到下一个玩家
+	} else if data.Operate == Peng { //碰
+		if data.Card == 0 { //客户端未提供要碰的牌
+			length := len(g.gameData.OperateRecord)
+			if length == 0 {
+				//上一个玩家打出的牌操作记录为空
+				logs.Error("用户碰操作，但是没有上一个操作记录")
+			} else {
+				data.Card = g.gameData.OperateRecord[length-1].Card //找到上一个玩家打出的那张牌
+			}
+		}
+		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+		g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card) //给当前玩家的牌加上要碰的牌
+		//碰相当于损失了2张牌
+		//g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], data.Card, 2)
+		//记录本次操作
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+		g.gameData.OperateArrays[user.ChairID] = []OperateType{Qi} //玩家碰牌后必须出一张牌
+		g.sendData(GameTurnPushData(user.ChairID, 0, OperateTime, g.gameData.OperateArrays[user.ChairID]), session)
+		g.gameData.CurChairID = user.ChairID //碰后需要自己出牌
 	}
 
 }

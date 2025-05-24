@@ -195,11 +195,16 @@ func GameBureauPushData(curBureau int) any {
 
 // GameTurnPushData 推送轮到某个玩家操作的信息
 func GameTurnPushData(chairID int, card mp.CardID, tick int, operateArray []OperateType) any {
+	//如果没有打出牌 card需要返回null 客户端识别null 会做处理
+	var c any
+	if card > 0 && card < 36 {
+		c = card
+	}
 	return map[string]any{
 		"type": GameTurnPush,
 		"data": map[string]any{
 			"chairID":      chairID,      //玩家ID
-			"card":         card,         //打出的牌
+			"card":         c,            //打出的牌
 			"tick":         tick,         //倒计时
 			"operateArray": operateArray, //可操作选项
 		},
@@ -223,11 +228,15 @@ func GameChatPushData(chairID int, t int, msg string, recipientID int) any {
 
 // GameTurnOperatePushData 推送玩家的操作
 func GameTurnOperatePushData(chairID int, card mp.CardID, operate OperateType, success bool) any {
+	var c any
+	if card > 0 && card < 36 {
+		c = card
+	}
 	return map[string]any{
 		"type": GameTurnOperatePush,
 		"data": map[string]any{
 			"chairID": chairID, //玩家座位号
-			"card":    card,    //操作的牌
+			"card":    c,       //操作的牌
 			"operate": operate, //操作类型
 			"success": success, //是否操作成功
 		},
