@@ -26,6 +26,7 @@ type Room struct {
 	union         base.UnionBase
 	roomDismissed bool //房间是否已解散
 	gameStarted   bool //游戏是否已开始
+	askDismiss    map[int]struct{}
 }
 
 // UserReady 用户准备
@@ -94,6 +95,9 @@ func (r *Room) RoomMessageHandle(session *remote.Session, req request.RoomMessag
 	}
 	if req.Type == proto.GetRoomSceneInfoNotify {
 		r.getRoomSceneInfoPush(session) //推送房间场景信息
+	}
+	if req.Type == proto.AskForDismissNotify {
+		r.askForDismiss(session, req.Data.IsExit) //解散房间
 	}
 }
 
@@ -167,8 +171,10 @@ func (r *Room) kickUser(user *proto.RoomUser, session *remote.Session) {
 
 // dismissRoom 解散房间
 func (r *Room) dismissRoom() {
-	r.Lock()
-	defer r.Unlock()
+	if r.TryLock() { //如果重复枷锁会导致阻塞，解散后不能重新创建房间
+		r.Lock()
+		defer r.Unlock()
+	}
 	if r.roomDismissed {
 		return
 	}
@@ -312,4 +318,78 @@ func (r *Room) GameMessageHandle(session *remote.Session, msg []byte) {
 		return
 	}
 	r.GameFrame.GameMessageHandle(user, session, msg)
+}
+
+// askForDismiss 解散房间
+func (r *Room) askForDismiss(session *remote.Session, exist bool) {
+	r.Lock()
+	defer r.Unlock()
+	if exist { //同意解散
+		if r.askDismiss == nil {
+			r.askDismiss = make(map[int]struct{})
+		}
+		user := r.users[session.GetUid()]
+		r.askDismiss[user.ChairID] = struct{}{} //当前玩家投票支持解散
+
+		nameArr := make([]string, len(r.users))
+		chairIDArr := make([]any, len(r.users))
+		avatarArr := make([]string, len(r.users))
+		onlinrArr := make([]bool, len(r.users))
+		for _, v := range r.users {
+			nameArr[v.ChairID] = v.UserInfo.Nickname
+			avatarArr[v.ChairID] = v.UserInfo.Avatar
+			_, ok := r.askDismiss[v.ChairID]
+			if ok {
+				chairIDArr[v.ChairID] = true
+			}
+			onlinrArr[v.ChairID] = true
+		}
+		data := proto.DismissPushData{
+			NameArr:    nameArr,
+			ChairIDArr: chairIDArr,
+			AskChairId: user.ChairID,
+			OnlineArr:  onlinrArr,
+			AvatarArr:  avatarArr,
+			Tm:         30, //倒计时
+		}
+		r.sendData(proto.AskForDismissPushData(&data), session)
+		if len(r.askDismiss) == len(r.users) { //所有人都同意解散
+			for _, v := range r.users {
+				r.kickUser(v, session)
+			}
+			if len(r.users) == 0 {
+				r.dismissRoom() //解散房间
+			}
+		}
+
+	} else { //不同意解散
+		user := r.users[session.GetUid()]
+		nameArr := make([]string, len(r.users))
+		chairIDArr := make([]any, len(r.users))
+		avatarArr := make([]string, len(r.users))
+		onlinrArr := make([]bool, len(r.users))
+		for _, v := range r.users {
+			nameArr[v.ChairID] = v.UserInfo.Nickname
+			avatarArr[v.ChairID] = v.UserInfo.Avatar
+			_, ok := r.askDismiss[v.ChairID]
+			if ok {
+				chairIDArr[v.ChairID] = true
+			}
+			onlinrArr[v.ChairID] = true
+		}
+		data := proto.DismissPushData{
+			NameArr:    nameArr,
+			ChairIDArr: chairIDArr,
+			AskChairId: user.ChairID,
+			OnlineArr:  onlinrArr,
+			AvatarArr:  avatarArr,
+			Tm:         30, //倒计时
+		}
+		r.sendData(proto.AskForDismissPushData(&data), session)
+	}
+}
+
+// sendData 向房间内所有用户推送消息
+func (r *Room) sendData(data any, session *remote.Session) {
+	r.ServerMessagePush(r.AllUsers(), data, session)
 }

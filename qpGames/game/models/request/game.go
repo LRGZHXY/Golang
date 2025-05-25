@@ -9,4 +9,5 @@ type RoomMessageReq struct {
 
 type RoomMessageData struct {
 	IsReady bool `json:"isReady"` //玩家准备状态
+	IsExit  bool `json:"isExit"`  //是否退出
 }

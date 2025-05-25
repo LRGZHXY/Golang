@@ -115,3 +115,23 @@ func OtherUserEntryRoomPushData(roomUserInfo *RoomUser) any {
 	}
 	return pushMsg
 }
+
+type DismissPushData struct {
+	NameArr    []string `json:"nameArr"`
+	ChairIDArr []any    `json:"chairIDArr"` //如果玩家是第一次弹出解散提示框，对应的any值是nil
+	AvatarArr  []string `json:"avatarArr"`
+	OnlineArr  []bool   `json:"onlineArr"`
+	AskChairId int      `json:"askChairId"` //提出解散请求的玩家的座位号
+	Tm         int      `json:"tm"`
+	ScoreArr   []int    `json:"scoreArr"`
+}
+
+// AskForDismissPushData 请求解散房间
+func AskForDismissPushData(data *DismissPushData) any {
+	pushMsg := map[string]any{
+		"type":       AskForDismissPush,
+		"data":       data,
+		"pushRouter": "RoomMessagePush",
+	}
+	return pushMsg
+}
