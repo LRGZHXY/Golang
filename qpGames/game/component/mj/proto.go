@@ -254,3 +254,13 @@ func GameResultPushData(result GameResult) any {
 		"pushRouter": "GameMessagePush",
 	}
 }
+
+// IndexOf 查找元素的索引
+func IndexOf[T OperateType](list []T, v T) int {
+	for index, value := range list {
+		if value == v {
+			return index
+		}
+	}
+	return -1
+}

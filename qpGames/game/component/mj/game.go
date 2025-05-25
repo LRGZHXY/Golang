@@ -20,6 +20,7 @@ type GameFrame struct {
 	gameData      *GameData
 	logic         *Logic
 	testCardArray []mp.CardID
+	turnSchedule  []*time.Timer
 }
 
 func (g *GameFrame) GetGameData(session *remote.Session) any {
@@ -184,20 +185,51 @@ func (g *GameFrame) setTurn(chairID int, session *remote.Session) {
 	for i := 0; i < g.gameData.ChairCount; i++ {
 		uid := g.getUserByChairID(i).UserInfo.Uid
 		if i == chairID { // 给当前玩家发明牌
-			g.sendDataUsers([]string{uid}, GameTurnPushData(chairID, card, OperateTime, operateArray), session)
+			g.gameTurn([]string{uid}, chairID, card, operateArray, session)
+			//g.sendDataUsers([]string{uid}, GameTurnPushData(chairID, card, OperateTime, operateArray), session)
 			g.gameData.OperateArrays[i] = operateArray
 			g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{
 				ChairID: i,
 				Card:    card,
 				Operate: Get,
 			})
+			g.turnScheduleExecute(chairID, card, operateArray, session)
 		} else {
+			g.gameTurn([]string{uid}, i, 36, operateArray, session) //其他玩家看到暗牌
 			//给其他玩家发暗牌
-			g.sendDataUsers([]string{uid}, GameTurnPushData(chairID, 36, OperateTime, operateArray), session)
+			//g.sendDataUsers([]string{uid}, GameTurnPushData(chairID, 36, OperateTime, operateArray), session)
 		}
 	}
 	restCardsCount := g.logic.getRestCardsCount() //剩余牌数推送
 	g.sendData(GameRestCardsCountPushData(restCardsCount), session)
+}
+
+// gameTurn 向指定用户或所有用户发送轮到谁出牌的消息
+func (g *GameFrame) gameTurn(uids []string, chairID int, card mp.CardID, operateArray []OperateType, session *remote.Session) {
+	g.gameData.Tick = OperateTime //操作倒计时
+	if uids == nil {              //发送给所有人
+		g.sendData(GameTurnPushData(chairID, card, g.gameData.Tick, operateArray), session)
+	} else { //只发送给指定用户
+		g.sendDataUsers(uids, GameTurnPushData(chairID, card, g.gameData.Tick, operateArray), session)
+	}
+}
+
+// turnScheduleExecute 设置定时器，到时间后自动执行操作
+func (g *GameFrame) turnScheduleExecute(chairID int, card mp.CardID, operateArray []OperateType, session *remote.Session) {
+	if g.turnSchedule[chairID] != nil {
+		g.turnSchedule[chairID].Stop() //如果已有一个定时器任务在运行,先停止（防止重复设置）
+	}
+	g.turnSchedule[chairID] = time.AfterFunc(time.Second, func() {
+		if g.gameData.Tick <= 0 {
+			if g.turnSchedule[chairID] != nil {
+				g.turnSchedule[chairID].Stop() //取消定时
+			}
+			g.userAutoOperate(chairID, card, operateArray, session) //自动操作
+		} else {
+			g.gameData.Tick--
+			g.turnSchedule[chairID].Reset(time.Second) //重设定时器下一秒再次执行
+		}
+	})
 }
 
 func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card mp.CardID) []OperateType {
@@ -232,6 +264,10 @@ func (g *GameFrame) onGameChat(user *proto.RoomUser, session *remote.Session, da
 }
 
 func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Session, data MessageData) {
+	if g.turnSchedule[user.ChairID] != nil {
+		g.turnSchedule[user.ChairID].Stop() //取消定时
+	}
+
 	if data.Operate == Qi { //弃牌
 		//向所有人通告 当前用户做了什么操作
 		g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
@@ -403,8 +439,10 @@ func (g *GameFrame) nextTurn(lastCard mp.CardID, session *remote.Session) {
 			}*/
 			if len(operateArray) > 0 { //该玩家可以进行某些操作
 				hasOtherOperate = true
+				g.gameData.Tick = OperateTime
 				g.sendData(GameTurnPushData(i, lastCard, OperateTime, operateArray), session)
 				g.gameData.OperateArrays[i] = operateArray
+				g.turnScheduleExecute(i, 0, operateArray, session)
 			}
 		}
 	}
@@ -473,6 +511,29 @@ func (g *GameFrame) onGetCard(user *proto.RoomUser, session *remote.Session, dat
 	g.testCardArray[user.ChairID] = data.Card //将客户端传来的牌data.Card存储到g.testCardArray中
 }
 
+// userAutoOperate 自动执行操作
+func (g *GameFrame) userAutoOperate(chairID int, card mp.CardID, operateArray []OperateType, session *remote.Session) {
+	indexOf := IndexOf(operateArray, Qi) //判断操作列表中是否包含弃牌
+	user := g.getUserByChairID(chairID)
+	if indexOf != -1 {
+		/*//操作有弃牌
+		//向所有人通告 当前用户做了什么操作
+		g.sendData(GameTurnOperatePushData(chairID, card, Qi, true), session)
+		//删除弃掉的牌
+		g.gameData.HandCards[chairID] = g.delCards(g.gameData.HandCards[chairID], card, 1)
+		//记录本次操作
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{chairID, card, Qi})
+		g.gameData.OperateArrays[chairID] = nil //清空该玩家的操作选项
+		g.nextTurn(card, session)               //轮到下一个玩家*/
+		g.onGameTurnOperate(user, session, MessageData{Operate: Qi, Card: card})
+	} else if IndexOf(operateArray, Guo) != -1 {
+		g.onGameTurnOperate(user, session, MessageData{Operate: Guo, Card: 0})
+		//操作过
+		/*g.sendData(GameTurnOperatePushData(chairID, card, Guo, true), session)
+		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{chairID, card, Guo})*/
+	}
+}
+
 func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {
 	gameData := initGameData(rule)
 	return &GameFrame{
@@ -481,6 +542,7 @@ func NewGameFrame(rule proto.GameRule, r base.RoomFrame) *GameFrame {
 		gameData:      gameData,
 		logic:         NewLogic(GameType(rule.GameFrameType), rule.Qidui),
 		testCardArray: make([]mp.CardID, gameData.ChairCount),
+		turnSchedule:  make([]*time.Timer, gameData.ChairCount),
 	}
 }
 
