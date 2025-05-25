@@ -117,7 +117,7 @@ func (g *GameFrame) sendHandCards(session *remote.Session) {
 		g.gameData.HandCards[i] = g.logic.getCards(13) //给每位玩家发13张牌
 		if i == 1 {
 			g.gameData.HandCards[i] = []mp.CardID{ //给第一个玩家发的牌
-				mp.Wan1, mp.Wan1, mp.Wan1, mp.Wan2, mp.Wan3, mp.Wan5, mp.Wan5, mp.Wan5,
+				mp.Wan1, mp.Wan1, mp.Wan2, mp.Wan2, mp.Wan3, mp.Wan5, mp.Wan5, mp.Wan5,
 				mp.Tong1, mp.Tong1, mp.Tong1, mp.Zhong, mp.Tong4,
 			}
 		}
@@ -215,6 +215,13 @@ func (g *GameFrame) getMyOperateArray(session *remote.Session, chairID int, card
 	}
 	if cardCount == 4 { //自摸杠
 		operateArray = append(operateArray, GangZi)
+	}
+	//补杠：已经碰了，再摸到一张一样的牌，可以和碰的牌组成杠
+	//已经拿牌之后再进行操作
+	for _, v := range g.gameData.OperateRecord {
+		if v.ChairID == chairID && v.Operate == Peng && v.Card == card {
+			operateArray = append(operateArray, GangBu)
+		}
 	}
 	return operateArray
 }
@@ -315,6 +322,44 @@ func (g *GameFrame) onGameTurnOperate(user *proto.RoomUser, session *remote.Sess
 		g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, card, data.Operate})
 		//继续操作
 		g.setTurn(user.ChairID, session)
+	} else if data.Operate == GangBu {
+		//1.自摸杠补
+		if g.gameData.CurChairID == user.ChairID {
+			card := g.gameData.HandCards[user.ChairID][len(g.gameData.HandCards[user.ChairID])-1]
+			for i := 0; i < g.gameData.ChairCount; i++ {
+				if i == user.ChairID { //当前执行操作的玩家
+					g.sendDataUsers([]string{g.getUserByChairID(i).UserInfo.Uid}, GameTurnOperatePushData(user.ChairID, card, data.Operate, true), session)
+				} else {
+					g.sendDataUsers([]string{g.getUserByChairID(i).UserInfo.Uid}, GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+				}
+			}
+			g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], card, 1)
+			g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, card, data.Operate})
+			//继续操作
+			g.setTurn(user.ChairID, session)
+		} else {
+			//2.吃牌杠补 （这是特殊情况，有些麻将的实现中不允许这个操作）
+			/*if data.Card == 0 { //客户端未提供要杠的牌
+				length := len(g.gameData.OperateRecord)
+				if length == 0 {
+					//上一个玩家打出的牌操作记录为空
+					logs.Error("用户吃杠操作，但是没有上一个操作记录")
+				} else {
+					data.Card = g.gameData.OperateRecord[length-1].Card //找到上一个玩家打出的那张牌
+				}
+			}
+			g.sendData(GameTurnOperatePushData(user.ChairID, data.Card, data.Operate, true), session)
+			//g.gameData.HandCards[user.ChairID] = append(g.gameData.HandCards[user.ChairID], data.Card) //给当前玩家的牌加上要杠的牌
+			//杠相当于损失了3张牌 当用户重新进入房间时 加载gameData handcards中杠的牌放在左下角
+			//g.gameData.HandCards[user.ChairID] = g.delCards(g.gameData.HandCards[user.ChairID], data.Card, 3)
+			//记录本次操作
+			g.gameData.OperateRecord = append(g.gameData.OperateRecord, OperateRecord{user.ChairID, data.Card, data.Operate})
+			g.setTurn(user.ChairID, session)
+			g.gameData.OperateArrays[user.ChairID] = []OperateType{Qi} //玩家杠牌后必须出一张牌
+			g.sendData(GameTurnPushData(user.ChairID, 0, OperateTime, g.gameData.OperateArrays[user.ChairID]), session)
+			g.gameData.CurChairID = user.ChairID //杠后需要自己出牌*/
+		}
+
 	}
 
 }
@@ -351,6 +396,11 @@ func (g *GameFrame) nextTurn(lastCard mp.CardID, session *remote.Session) {
 				continue //跳过当前出牌的玩家（不能对自己刚打出的牌进行操作）
 			}
 			operateArray := g.logic.getOperateArray(g.gameData.HandCards[i], lastCard)
+			/*	for _, v := range g.gameData.OperateRecord {
+				if v.ChairID == i && v.Operate == Peng && v.Card == lastCard { //可以补杠
+					operateArray = append(operateArray, GangBu)
+				}
+			}*/
 			if len(operateArray) > 0 { //该玩家可以进行某些操作
 				hasOtherOperate = true
 				g.sendData(GameTurnPushData(i, lastCard, OperateTime, operateArray), session)
