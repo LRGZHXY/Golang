@@ -28,6 +28,14 @@ import (
 	"course/labrpc"
 )
 
+type Role string
+
+const (
+	Follower  Role = "Follower"
+	Candidate Role = "Candidate"
+	Leader    Role = "Leader"
+)
+
 // as each Raft peer becomes aware that successive log entries are
 // committed, the peer should send an ApplyMsg to the service (or
 // tester) on the same server, via the applyCh passed to Make(). set
@@ -60,7 +68,50 @@ type Raft struct {
 	// Your data here (PartA, PartB, PartC).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
+	role        Role
+	currentTerm int
+	votedFor    int //-1表示没有投过票
 
+	electionStart   time.Time     //选举周期控制起始点
+	electionTimeout time.Duration // 选举超时间隔 随机
+
+}
+
+// 状态转换
+func (rf *Raft) becomeFollowerLocked(term int) {
+	if term < rf.currentTerm { //当前term更大，不用做状态转换
+		LOG(rf.me, rf.currentTerm, DError, "Can't become Follower,lower term: T%d", term)
+		return
+	}
+
+	LOG(rf.me, rf.currentTerm, DLog, "%s->Follower,For T%s->T%s", rf.role, rf.currentTerm, term)
+	rf.role = Follower
+	if term > rf.currentTerm {
+		rf.votedFor = -1 //进入新term 将投票置为空
+	}
+	rf.currentTerm = term
+}
+
+func (rf *Raft) becomeCandidateLocked() {
+	if rf.role == Leader {
+		LOG(rf.me, rf.currentTerm, DError, "Leader can't become Candidate")
+		return
+	}
+
+	LOG(rf.me, rf.currentTerm, DVote, "%s->Candidate,For T%d", rf.role, rf.currentTerm+1)
+	rf.currentTerm++
+	rf.role = Candidate
+	rf.votedFor = rf.me
+}
+
+func (rf *Raft) becomeLeaderLocked() {
+	if rf.role != Candidate {
+		LOG(rf.me, rf.currentTerm, DError, "Only Candidate can become Leader")
+		return
+	}
+
+	LOG(rf.me, rf.currentTerm, DLeader, "Become Leader in T%d", rf.currentTerm)
+	rf.role = Leader
 }
 
 // return currentTerm and whether this server
@@ -240,6 +291,10 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.me = me
 
 	// Your initialization code here (PartA, PartB, PartC).
+	//初始化
+	rf.role = Follower
+	rf.currentTerm = 0
+	rf.votedFor = -1
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
