@@ -77,6 +77,12 @@ type Raft struct {
 	currentTerm int
 	votedFor    int //-1表示没有投过票
 
+	log []LogEntry //日志条目数组
+
+	//Leader独有视图字段
+	nextIndex  []int //下一条要发的日志索引
+	matchIndex []int //已成功匹配的最大日志索引
+
 	electionStart   time.Time     //选举周期控制起始点
 	electionTimeout time.Duration // 选举超时间隔 随机
 
@@ -118,6 +124,10 @@ func (rf *Raft) becomeLeaderLocked() {
 
 	LOG(rf.me, rf.currentTerm, DLeader, "Become Leader in T%d", rf.currentTerm)
 	rf.role = Leader
+	for peer := 0; peer < len(rf.peers); peer++ {
+		rf.nextIndex[peer] = len(rf.log)
+		rf.matchIndex[peer] = 0
+	}
 }
 
 // return currentTerm and whether this server
@@ -243,6 +253,16 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.role = Follower
 	rf.currentTerm = 0
 	rf.votedFor = -1
+
+	/*
+		插入一个 dummy entry（哑元日志项）：
+		避免访问日志时处理index == 0的边界情况
+		实际日志从索引1开始
+	*/
+	rf.log = append(rf.log, LogEntry{})
+
+	rf.nextIndex = make([]int, len(rf.peers))
+	rf.matchIndex = make([]int, len(rf.peers))
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
