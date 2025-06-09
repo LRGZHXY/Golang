@@ -18,8 +18,6 @@ package raft
 //
 
 import (
-	//	"bytes"
-	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -34,18 +32,6 @@ const (
 	electionTimeoutMax time.Duration = 400 * time.Millisecond
 	replicateInterval  time.Duration = 200 * time.Millisecond
 )
-
-// resetElectionTimerLocked 重置选举计时器
-func (rf *Raft) resetElectionTimerLocked() {
-	rf.electionStart = time.Now()
-	randRange := int64(electionTimeoutMax - electionTimeoutMin)                     //150
-	rf.electionTimeout = electionTimeoutMin + time.Duration(rand.Int63()%randRange) //保证生成值在0~150之间(250~400)
-}
-
-// isElectionTimeoutLocked 检查是否超时
-func (rf *Raft) isElectionTimeoutLocked() bool {
-	return time.Since(rf.electionStart) > rf.electionTimeout
-}
 
 type Role string
 
@@ -118,7 +104,7 @@ func (rf *Raft) becomeCandidateLocked() {
 	}
 
 	LOG(rf.me, rf.currentTerm, DVote, "%s->Candidate,For T%d", rf.role, rf.currentTerm+1)
-	rf.resetElectionTimerLocked() //
+	rf.resetElectionTimerLocked() ///
 	rf.currentTerm++
 	rf.role = Candidate
 	rf.votedFor = rf.me
@@ -190,84 +176,6 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 
 }
 
-// example RequestVote RPC arguments structure.
-// field names must start with capital letters!
-//投票请求参数
-type RequestVoteArgs struct {
-	// Your data here (PartA, PartB).
-	Term        int //候选人任期
-	CandidateId int
-}
-
-// example RequestVote RPC reply structure.
-// field names must start with capital letters!
-//投票回复参数
-type RequestVoteReply struct {
-	// Your data here (PartA).
-	Term        int
-	VoteGranted bool //是否投票
-}
-
-// example RequestVote RPC handler.
-// RequestVote 候选人请求投票
-func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
-	// Your code here (PartA, PartB).
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
-	reply.Term = rf.currentTerm
-	reply.VoteGranted = false
-	if args.Term < rf.currentTerm { //候选者任期<当前节点任期
-		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject voted,Higher term,T%d>T%d", args.CandidateId, rf.currentTerm, args.Term)
-		return
-	}
-	if args.Term > rf.currentTerm {
-		rf.becomeFollowerLocked(args.Term) //将自己转换为follower
-	}
-
-	if rf.votedFor != -1 { //当前任期已经投过票
-		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject,Already voted to S%d", args.CandidateId, rf.votedFor)
-		return
-	}
-
-	reply.VoteGranted = true
-	rf.votedFor = args.CandidateId
-	rf.resetElectionTimerLocked()
-	LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Vote granted", args.CandidateId)
-}
-
-// example code to send a RequestVote RPC to a server.
-// server is the index of the target server in rf.peers[].
-// expects RPC arguments in args.
-// fills in *reply with RPC reply, so caller should
-// pass &reply.
-// the types of the args and reply passed to Call() must be
-// the same as the types of the arguments declared in the
-// handler function (including whether they are pointers).
-//
-// The labrpc package simulates a lossy network, in which servers
-// may be unreachable, and in which requests and replies may be lost.
-// Call() sends a request and waits for a reply. If a reply arrives
-// within a timeout interval, Call() returns true; otherwise
-// Call() returns false. Thus Call() may not return for a while.
-// A false return can be caused by a dead server, a live server that
-// can't be reached, a lost request, or a lost reply.
-//
-// Call() is guaranteed to return (perhaps after a delay) *except* if the
-// handler function on the server side does not return.  Thus there
-// is no need to implement your own timeouts around Call().
-//
-// look at the comments in ../labrpc/labrpc.go for more details.
-//
-// if you're having trouble getting RPC to work, check that you've
-// capitalized all field names in structs passed over RPC, and
-// that the caller passes the address of the reply struct with &, not
-// the struct itself.
-func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
-	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
-	return ok
-}
-
 // the service using Raft (e.g. a k/v server) wants to start
 // agreement on the next command to be appended to Raft's log. if this
 // server isn't the leader, returns false. otherwise start the
@@ -312,165 +220,6 @@ func (rf *Raft) killed() bool {
 // 防止过期异步操作污染当前状态
 func (rf *Raft) contextLostLocked(role Role, term int) bool { //上下文：角色和任期
 	return !(rf.currentTerm == term && rf.role == role) // true：上下文丢失，不能继续处理; false：上下文还在，处理可以继续。
-}
-
-type AppendEntriesArgs struct {
-	Term     int
-	LeaderId int
-}
-
-type AppendEntriesReply struct {
-	Term    int  //跟随者任期
-	Success bool //表示跟随者是否成功接收日志条目（这里是心跳，所以可忽略）
-}
-
-// 回调函数 AppendEntries 处理领导者对跟随者发送心跳或日志复制请求
-func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
-	reply.Term = rf.currentTerm
-	reply.Success = false
-	if args.Term < rf.currentTerm { //过时的领导者，直接拒绝
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject log,Higher term,T%d<T%d", args.LeaderId, args.Term, rf.currentTerm)
-		return
-	}
-	if args.Term >= rf.currentTerm {
-		rf.becomeFollowerLocked(args.Term)
-	}
-	rf.resetElectionTimerLocked() //重置选举计时器
-	reply.Success = true
-}
-
-// sendAppendEntries 调用Raft.AppendEntries方法 向follower发送日志或心跳请求
-func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
-	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
-	return ok
-}
-
-// startReplication 单轮心跳：对除自己外的所有Peer发送一个心跳RPC
-func (rf *Raft) startReplication(term int) bool {
-	//单次RPC：对某个Peer来发送心跳，并且处理RPC返回值
-	replicateToPeer := func(peer int, args *AppendEntriesArgs) {
-		reply := &AppendEntriesReply{}
-		ok := rf.sendAppendEntries(peer, args, reply)
-		rf.mu.Lock()
-		defer rf.mu.Unlock()
-		if !ok {
-			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Lost or crashed", peer)
-			return
-		}
-		if reply.Term > rf.currentTerm {
-			rf.becomeFollowerLocked(reply.Term)
-			return
-		}
-	}
-
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-	if rf.contextLostLocked(Leader, term) {
-		LOG(rf.me, rf.currentTerm, DLeader, "Lost Leader[%d] to %s[T%d]", term, rf.role, rf.currentTerm)
-		return false
-	}
-	for peer := 0; peer < len(rf.peers); peer++ {
-		if peer == rf.me {
-			continue
-		}
-		args := &AppendEntriesArgs{
-			Term:     rf.currentTerm,
-			LeaderId: rf.me,
-		}
-		go replicateToPeer(peer, args)
-	}
-	return true
-}
-
-// 心跳Ticker：在当选Leader后起一个后台线程，等间隔的发送心跳/复制日志
-// replicationTicker 心跳 只有在当前term内能进行日志同步
-func (rf *Raft) replicationTicker(term int) {
-	for !rf.killed() {
-		ok := rf.startReplication(term) //发起一次日志复制（心跳）
-		if !ok {
-			break
-		}
-		time.Sleep(replicateInterval)
-	}
-}
-
-// startElection 发起选举
-func (rf *Raft) startElection(term int) {
-	votes := 0
-	askVoteFromPeer := func(peer int, args *RequestVoteArgs) {
-		reply := &RequestVoteReply{}
-		ok := rf.sendRequestVote(peer, args, reply) //向其他节点请求投票
-
-		//handle the response
-		rf.mu.Lock()
-		defer rf.mu.Unlock()
-		if !ok {
-			LOG(rf.me, rf.currentTerm, DDebug, "Ask vote from S%d,Lost or error", peer)
-			return
-		}
-
-		if reply.Term > rf.currentTerm { //对方任期更大，自己变成follower
-			rf.becomeFollowerLocked(reply.Term)
-			return
-		}
-
-		if rf.contextLostLocked(Candidate, term) { //上下文失效
-			LOG(rf.me, rf.currentTerm, DVote, "Lost context,abort RequestVoteReply for S%d", peer)
-			return
-		}
-
-		if reply.VoteGranted {
-			votes++
-			if votes > len(rf.peers)/2 { //票数超过多数节点
-				rf.becomeLeaderLocked() //变成leader
-				go rf.replicationTicker(term)
-			}
-		}
-	}
-
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-	if rf.contextLostLocked(Candidate, term) {
-		LOG(rf.me, rf.currentTerm, DVote, "Lost Candidate to %s,abort RequestVote", rf.role)
-		return
-	}
-
-	for peer := 0; peer < len(rf.peers); peer++ {
-		if peer == rf.me {
-			votes++ //自己默认给自己投票
-			continue
-		}
-
-		args := &RequestVoteArgs{
-			Term:        rf.currentTerm,
-			CandidateId: rf.me,
-		}
-		go askVoteFromPeer(peer, args) //向其他节点发出投票请求
-	}
-}
-
-// electionticker 定时检查是否需要发起选举
-func (rf *Raft) electionTicker() {
-	for !rf.killed() {
-
-		// Your code here (PartA)
-		// Check if a leader election should be started.
-		rf.mu.Lock()
-		if rf.role != Leader && rf.isElectionTimeoutLocked() {
-			//不是leader并且已经超时，变成候选者
-			rf.becomeCandidateLocked()
-			go rf.startElection(rf.currentTerm) //开始选举
-		}
-		rf.mu.Unlock()
-
-		// pause for a random amount of time between 50 and 350
-		// milliseconds.
-		ms := 50 + (rand.Int63() % 300)
-		time.Sleep(time.Duration(ms) * time.Millisecond) //休眠一段随机时间(选举超时是一个随机值)
-	}
 }
 
 // the service or tester wants to create a Raft server. the ports
