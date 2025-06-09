@@ -46,7 +46,7 @@ def list_topics(value: Optional[str]):
 
 
 def main(
-    file: typer.FileText = typer.Argument(None, help="File to read, stdin otherwise"),
+    filename: Optional[str] = typer.Argument(None, help="File to read, stdin otherwise"),
     colorize: bool = typer.Option(True, "--no-color"),
     n_columns: Optional[int] = typer.Option(None, "--columns", "-c"),
     withTime: bool = typer.Option(False, "--time", "-t"),
@@ -56,7 +56,11 @@ def main(
     topics = list(TOPICS)
 
     # We can take input from a stdin (pipes) or from a file
-    input_ = file if file else sys.stdin
+    if filename:
+        input_ = open(filename, encoding="utf-16")
+    else:
+        input_ = sys.stdin
+
     # Print just some topics or exclude some topics (good for avoiding verbose ones)
     if just:
         topics = just
@@ -114,6 +118,8 @@ def main(
                 print("#" * console.width)
             print(line, end="")
 
+    if filename:
+        input_.close()
 
 if __name__ == "__main__":
     typer.run(main)
