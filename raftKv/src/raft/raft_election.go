@@ -21,6 +21,19 @@ func (rf *Raft) isElectionTimeoutLocked() bool {
 	return time.Since(rf.electionStart) > rf.electionTimeout
 }
 
+// 比较规则：1.Term高者更新	2.Term相同，Index大者更新
+// isMoreUpToDate 检查自己本身的日志和候选者日志谁更新
+func (rf *Raft) isMoreUpToDateLocked(candidateIndex, candidateTerm int) bool {
+	l := len(rf.log)
+	lastIndex, lastTerm := l-1, rf.log[l-1].Term
+
+	LOG(rf.me, rf.currentTerm, DVote, "Compore last log,Me:[%d]T%d,Candidate:[%d]T%d", lastIndex, lastTerm, candidateIndex, candidateTerm)
+	if lastTerm != candidateTerm {
+		return lastTerm > candidateTerm //true:自己任期更大->不投票
+	}
+	return lastIndex > candidateIndex //true:自己日志更长->不投票
+}
+
 // example RequestVote RPC arguments structure.
 // field names must start with capital letters!
 //投票请求参数
@@ -28,6 +41,9 @@ type RequestVoteArgs struct {
 	// Your data here (PartA, PartB).
 	Term        int //候选人任期
 	CandidateId int
+
+	LastLogIndex int //候选人最后一条日志的索引
+	LastLogTerm  int //候选人最后一条日志的任期
 }
 
 // example RequestVote RPC reply structure.
@@ -57,7 +73,12 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	if rf.votedFor != -1 { //当前任期已经投过票
-		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject,Already voted to S%d", args.CandidateId, rf.votedFor)
+		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject voted,Already voted to S%d", args.CandidateId, rf.votedFor)
+		return
+	}
+
+	if rf.isMoreUpToDateLocked(args.LastLogIndex, args.LastLogTerm) { //候选人日志不如自己新，拒绝投票
+		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject voted,Candidate's log less up-to-date", args.CandidateId)
 		return
 	}
 
@@ -136,10 +157,11 @@ func (rf *Raft) startElection(term int) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	if rf.contextLostLocked(Candidate, term) {
-		LOG(rf.me, rf.currentTerm, DVote, "Lost Candidate to %s,abort RequestVote", rf.role)
+		LOG(rf.me, rf.currentTerm, DVote, "Lost Candidate[T%d] to %s[T%d], abort RequestVote", rf.role, term, rf.currentTerm) ///
 		return
 	}
 
+	l := len(rf.log)
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
 			votes++ //自己默认给自己投票
@@ -147,8 +169,10 @@ func (rf *Raft) startElection(term int) {
 		}
 
 		args := &RequestVoteArgs{
-			Term:        rf.currentTerm,
-			CandidateId: rf.me,
+			Term:         rf.currentTerm,
+			CandidateId:  rf.me,
+			LastLogIndex: l - 1,
+			LastLogTerm:  rf.log[l-1].Term,
 		}
 		go askVoteFromPeer(peer, args) //向其他节点发出投票请求
 	}
