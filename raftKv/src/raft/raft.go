@@ -103,7 +103,7 @@ func (rf *Raft) becomeFollowerLocked(term int) {
 		return
 	}
 
-	LOG(rf.me, rf.currentTerm, DLog, "%s->Follower,For T%s->T%s", rf.role, rf.currentTerm, term)
+	LOG(rf.me, rf.currentTerm, DLog, "%s->Follower,For T%v->T%v", rf.role, rf.currentTerm, term)
 	rf.role = Follower
 	if term > rf.currentTerm {
 		rf.votedFor = -1 //进入新term 将投票置为空
@@ -118,6 +118,7 @@ func (rf *Raft) becomeCandidateLocked() {
 	}
 
 	LOG(rf.me, rf.currentTerm, DVote, "%s->Candidate,For T%d", rf.role, rf.currentTerm+1)
+	rf.resetElectionTimerLocked() //
 	rf.currentTerm++
 	rf.role = Candidate
 	rf.votedFor = rf.me
@@ -136,11 +137,10 @@ func (rf *Raft) becomeLeaderLocked() {
 // return currentTerm and whether this server
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
-
-	var term int
-	var isleader bool
 	// Your code here (PartA).
-	return term, isleader
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	return rf.currentTerm, rf.role == Leader
 }
 
 // save Raft's persistent state to stable storage,
@@ -439,7 +439,7 @@ func (rf *Raft) startElection(term int) {
 	}
 
 	for peer := 0; peer < len(rf.peers); peer++ {
-		if peer == rf.me { //!!!!
+		if peer == rf.me {
 			votes++ //自己默认给自己投票
 			continue
 		}
