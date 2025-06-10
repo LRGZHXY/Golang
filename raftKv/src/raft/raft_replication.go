@@ -1,6 +1,9 @@
 package raft
 
-import "time"
+import (
+	"sort"
+	"time"
+)
 
 /*
 	日志复制
@@ -19,6 +22,8 @@ type AppendEntriesArgs struct {
 	PrevLogIndex int        //新日志条目的前一个日志条目的索引
 	PrevLogTerm  int        //PrevLogIndex对应日志条目的任期号
 	Entries      []LogEntry //需要被复制的日志条目（如果为空，则是心跳信号）
+
+	LeaderCommit int //已经提交到状态机的最大日志索引
 }
 
 type AppendEntriesReply struct {
@@ -58,7 +63,18 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	reply.Success = true
 	LOG(rf.me, rf.currentTerm, DLog2, "Follower accept logs:(%d,%d]", args.PrevLogIndex, args.PrevLogIndex+len(args.Entries))
 
-	// TODO(qtmuniao):handle LeaderCommit
+	if args.LeaderCommit > rf.commitIndex {
+		LOG(rf.me, rf.currentTerm, DApply, "Follower update the commit index %d->%d", rf.commitIndex, args.LeaderCommit)
+		rf.commitIndex = args.LeaderCommit
+
+		//rf.log引范围是 [0, len(rf.log)-1]
+		if rf.commitIndex >= len(rf.log) {
+			rf.commitIndex = len(rf.log) - 1 //避免访问非法日志位置
+		} ///
+
+		//通知applicationTicker()线程：“日志有新提交了，可以把它们发给状态机了”
+		rf.applyCond.Signal() //唤醒应用线程
+	}
 
 	rf.resetElectionTimerLocked() //重置选举计时器
 }
@@ -67,6 +83,22 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 	return ok
+}
+
+// getMajorityIndexLocked Leader计算可以安全提交的日志索引（大多数节点已复制的最大日志索引）
+func (rf *Raft) getMajorityIndexLocked() int {
+	tmpIndexes := make([]int, len(rf.peers)) ///
+	copy(tmpIndexes, rf.matchIndex)
+	sort.Ints(sort.IntSlice(tmpIndexes)) //升序排序
+	/*
+			tmpIndexes = [4, 7, 8, 9, 9]
+			majorityIdx = (5 - 1) / 2 = 4 / 2 = 2
+			函数返回 8
+		    表示多数节点（节点索引2、3、4）已经复制了日志索引8 --> Leader可以把索引 ≤ 8 的日志项标记为已提交
+	*/
+	majorityIdx := (len(rf.peers) - 1) / 2 //计算多数节点对应的下标
+	LOG(rf.me, rf.currentTerm, DDebug, "Match index after sort:%v,majority[%d]=%d", tmpIndexes, majorityIdx, tmpIndexes[majorityIdx])
+	return tmpIndexes[majorityIdx]
 }
 
 // startReplication 单轮心跳：对除自己外的所有Peer发送一个心跳RPC
@@ -100,7 +132,13 @@ func (rf *Raft) startReplication(term int) bool {
 		rf.matchIndex[peer] = args.PrevLogIndex + len(args.Entries)
 		rf.nextIndex[peer] = rf.matchIndex[peer] + 1
 
-		// TODO(qtmuniao):update the commitIndex
+		// 更新commitIndex
+		majorityMatched := rf.getMajorityIndexLocked()
+		if majorityMatched > rf.commitIndex {
+			LOG(rf.me, rf.currentTerm, DApply, "Leader update the commit index %d->%d", rf.commitIndex, majorityMatched)
+			rf.commitIndex = majorityMatched
+			rf.applyCond.Signal()
+		}
 	}
 
 	rf.mu.Lock()
@@ -124,7 +162,7 @@ func (rf *Raft) startReplication(term int) bool {
 			PrevLogIndex: prevIdx,
 			PrevLogTerm:  prevTerm,
 			Entries:      rf.log[prevIdx+1:],
-			///
+			LeaderCommit: rf.commitIndex,
 		}
 		///
 		go replicateToPeer(peer, args)

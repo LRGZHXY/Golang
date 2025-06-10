@@ -83,6 +83,12 @@ type Raft struct {
 	nextIndex  []int //下一条要发的日志索引
 	matchIndex []int //已成功匹配的最大日志索引
 
+	//日志应用
+	commitIndex int           //已提交的最大日志索引（所有提交的日志条目都已被多数派复制）
+	lastApplied int           //最后被应用到状态机的日志索引（已经对外生效的命令）
+	applyCh     chan ApplyMsg //将已经提交的日志条目推送给状态机的通道
+	applyCond   *sync.Cond    //让日志应用线程在没有新日志时能睡眠等待，避免空转浪费资源
+
 	electionStart   time.Time     //选举周期控制起始点
 	electionTimeout time.Duration // 选举超时间隔 随机
 
@@ -264,11 +270,17 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.nextIndex = make([]int, len(rf.peers))
 	rf.matchIndex = make([]int, len(rf.peers))
 
+	rf.applyCh = applyCh
+	rf.commitIndex = 0 ///
+	rf.lastApplied = 0 ///
+	rf.applyCond = sync.NewCond(&rf.mu)
+
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
 	// start ticker goroutine to start elections
 	go rf.electionTicker()
+	go rf.applicationTicker()
 
 	return rf
 }
