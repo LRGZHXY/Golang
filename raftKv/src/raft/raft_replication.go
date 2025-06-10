@@ -50,7 +50,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.becomeFollowerLocked(args.Term)
 	}
 
-	if args.PrevLogIndex >= len(rf.log) { //follower日志长度不够 /// >=!!!
+	if args.PrevLogIndex >= len(rf.log) { //follower日志长度不够
 		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Follower log too short,Len:%d <= Prev:%d", args.LeaderId, len(rf.log), args.PrevLogIndex)
 		return
 	}
@@ -118,13 +118,19 @@ func (rf *Raft) startReplication(term int) bool {
 			return
 		}
 
+		//检查上下文
+		if rf.contextLostLocked(Leader, term) {
+			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Context Lost,T%d:Leader->T%d:%d", peer, term, rf.currentTerm, rf.role)
+			return
+		}
+
 		if !reply.Success { //日志不一致
-			idx, term := args.PrevLogIndex, args.PrevLogTerm ///
+			idx, term := args.PrevLogIndex, args.PrevLogTerm
 			for idx > 0 && rf.log[idx].Term == term {
 				idx-- //往前找第一个与当前term不同的位置
 			}
 			rf.nextIndex[peer] = idx + 1
-			LOG(rf.me, rf.currentTerm, DLog, "Not match with S%d in %d,try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
+			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Not matched at %d,try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
 			return
 		}
 
@@ -164,7 +170,7 @@ func (rf *Raft) startReplication(term int) bool {
 			Entries:      rf.log[prevIdx+1:],
 			LeaderCommit: rf.commitIndex,
 		}
-		///
+		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, Send log, Prev=[%d]T%d, Len()=%d", peer, args.PrevLogIndex, args.PrevLogTerm, len(args.Entries)) ///
 		go replicateToPeer(peer, args)
 	}
 	return true
