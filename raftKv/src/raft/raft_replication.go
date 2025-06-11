@@ -75,25 +75,25 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.resetElectionTimerLocked() //重置选举计时器
 		if !reply.Success {
 			LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Follower Conflict:[%d]T%d", args.LeaderId, reply.ConfilictIndex, reply.ConfilictTerm)
-			LOG(rf.me, rf.currentTerm, DDebug, "<- S%d,Follower Log=%v", args.LeaderId, rf.logString())
+			LOG(rf.me, rf.currentTerm, DDebug, "<- S%d,Follower Log=%v", args.LeaderId, rf.log.String())
 		}
 	}()
 
-	if args.PrevLogIndex >= len(rf.log) { //follower日志长度不够
+	if args.PrevLogIndex >= rf.log.size() { //follower日志长度不够
 		reply.ConfilictTerm = InvalidTerm
 		//冲突索引：为了告诉Leader冲突日志任期从哪个位置开始，Leader可以直接回退到这个索引，提高同步效率
-		reply.ConfilictIndex = len(rf.log)
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Follower log too short,Len:%d < Prev:%d", args.LeaderId, len(rf.log), args.PrevLogIndex)
+		reply.ConfilictIndex = rf.log.size()
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Follower log too short,Len:%d < Prev:%d", args.LeaderId, rf.log.size(), args.PrevLogIndex)
 		return
 	}
-	if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm { //PrevLogIndex位置的日志项任期不一致
-		reply.ConfilictTerm = rf.log[args.PrevLogIndex].Term       //设置冲突任期为跟随者日志该位置的任期
-		reply.ConfilictIndex = rf.firstLogFor(reply.ConfilictTerm) //找到冲突任期第一次出现的日志索引
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Prev log not match,[%d]:T%d!=T%d", args.LeaderId, args.PrevLogIndex, rf.log[args.PrevLogIndex].Term, args.PrevLogTerm)
+	if rf.log.at(args.PrevLogIndex).Term != args.PrevLogTerm { //PrevLogIndex位置的日志项任期不一致
+		reply.ConfilictTerm = rf.log.at(args.PrevLogIndex).Term     //设置冲突任期为跟随者日志该位置的任期
+		reply.ConfilictIndex = rf.log.firstFor(reply.ConfilictTerm) //找到冲突任期第一次出现的日志索引
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Prev log not match,[%d]:T%d!=T%d", args.LeaderId, args.PrevLogIndex, rf.log.at(args.PrevLogIndex).Term, args.PrevLogTerm)
 		return
 	}
 
-	rf.log = append(rf.log[:args.PrevLogIndex+1], args.Entries...) //追加新日志（将Follower日志中匹配点之后的内容全部替换为Leader的内容）
+	rf.log.appendFrom(args.PrevLogIndex, args.Entries) //追加新日志（将Follower日志中匹配点之后的内容全部替换为Leader的内容）
 	rf.persistLocked()
 	reply.Success = true
 	LOG(rf.me, rf.currentTerm, DLog2, "Follower accept logs:(%d,%d]", args.PrevLogIndex, args.PrevLogIndex+len(args.Entries))
@@ -158,7 +158,7 @@ func (rf *Raft) startReplication(term int) bool {
 			if reply.ConfilictTerm == InvalidTerm { //Follower日志长度不够
 				rf.nextIndex[peer] = reply.ConfilictIndex //从冲突索引日志开始同步
 			} else {
-				firstIndex := rf.firstLogFor(reply.ConfilictTerm)
+				firstIndex := rf.log.firstFor(reply.ConfilictTerm)
 				if firstIndex != InvalidIndex {
 					rf.nextIndex[peer] = firstIndex //Leader从第一次出现冲突任期的位置开始发送 ///
 				} else { //Leader日志里没有这个任期的日志
@@ -171,8 +171,8 @@ func (rf *Raft) startReplication(term int) bool {
 				rf.nextIndex[peer] = prevIndex //保证nextIndex不会增加，只能保持或减小
 			}
 			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Not matched at Prev=[%d]T%d,Try next Prev=[%d]T%d",
-				peer, args.PrevLogIndex, rf.log[args.PrevLogIndex].Term, rf.nextIndex[peer]-1, rf.log[rf.nextIndex[peer]-1].Term) //
-			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,Leader log=%v", peer, rf.logString())
+				peer, args.PrevLogIndex, args.PrevLogIndex, rf.nextIndex[peer]-1, rf.log.at(rf.nextIndex[peer]-1))
+			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,Leader log=%v", peer, rf.log.String())
 			return
 		}
 
@@ -182,7 +182,7 @@ func (rf *Raft) startReplication(term int) bool {
 
 		// 更新commitIndex
 		majorityMatched := rf.getMajorityIndexLocked()
-		if majorityMatched > rf.commitIndex && rf.log[majorityMatched].Term == rf.currentTerm { //只能提交当前任期的日志
+		if majorityMatched > rf.commitIndex && rf.log.at(majorityMatched).Term == rf.currentTerm { //只能提交当前任期的日志
 			LOG(rf.me, rf.currentTerm, DApply, "Leader update the commit index %d->%d", rf.commitIndex, majorityMatched)
 			rf.commitIndex = majorityMatched
 			rf.applyCond.Signal()
@@ -197,19 +197,19 @@ func (rf *Raft) startReplication(term int) bool {
 	}
 	for peer := 0; peer < len(rf.peers); peer++ {
 		if peer == rf.me {
-			rf.matchIndex[peer] = len(rf.log) - 1 //设置为最新日志索引
-			rf.nextIndex[peer] = len(rf.log)
+			rf.matchIndex[peer] = rf.log.size() - 1 //设置为最新日志索引
+			rf.nextIndex[peer] = rf.log.size()
 			continue
 		}
 
 		prevIdx := rf.nextIndex[peer] - 1 //要发送日志的起始位置前的一个位置
-		prevTerm := rf.log[prevIdx].Term
+		prevTerm := rf.log.at(prevIdx).Term
 		args := &AppendEntriesArgs{
 			Term:         rf.currentTerm,
 			LeaderId:     rf.me,
 			PrevLogIndex: prevIdx,
 			PrevLogTerm:  prevTerm,
-			Entries:      rf.log[prevIdx+1:],
+			Entries:      rf.log.tail(prevIdx + 1),
 			LeaderCommit: rf.commitIndex,
 		}
 		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, Append,Args=%v", peer, args.String())

@@ -18,7 +18,6 @@ package raft
 //
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -83,7 +82,7 @@ type Raft struct {
 	currentTerm int
 	votedFor    int //-1表示没有投过票
 
-	log []LogEntry //日志条目数组
+	log *RaftLog //日志条目数组
 
 	//Leader独有视图字段
 	nextIndex  []int //下一条要发的日志索引
@@ -141,43 +140,9 @@ func (rf *Raft) becomeLeaderLocked() {
 	LOG(rf.me, rf.currentTerm, DLeader, "Become Leader in T%d", rf.currentTerm)
 	rf.role = Leader
 	for peer := 0; peer < len(rf.peers); peer++ {
-		rf.nextIndex[peer] = len(rf.log)
+		rf.nextIndex[peer] = rf.log.size()
 		rf.matchIndex[peer] = 0
 	}
-}
-
-// firstLogFor 查找日志中第一次出现某个term的日志下标
-func (rf *Raft) firstLogFor(term int) int {
-	for idx, entry := range rf.log {
-		if entry.Term == term {
-			return idx
-		} else if entry.Term > term {
-			break
-		}
-	}
-	return InvalidIndex // 0 代表没找到
-}
-
-/*
-eg：Index: 0  1  2  3  4  5
-	Term:  1  1  2  2  2  3
-	-->  [0,1]T1[2,4]T2[5,5]T3  表示：日志索引0~1是任期1；2~4是任期2；5是任期3
-*/
-// logString 将日志按任期划分，压缩成字符串
-func (rf *Raft) logString() string {
-	var terms string
-	prevTerm := rf.log[0].Term //正在处理的日志的任期
-	prevStart := 0             //这段任期开始的索引
-	for i := 0; i < len(rf.log); i++ {
-		if rf.log[i].Term != prevTerm { //说明前一个任期结束了
-			terms += fmt.Sprintf("[%d,%d]T%d", prevStart, i-1, prevTerm)
-			//更新prevTerm和prevStart为当前日志项
-			prevTerm = rf.log[i].Term
-			prevStart = i
-		}
-	}
-	terms += fmt.Sprintf("[%d,%d]T%d", prevStart, len(rf.log)-1, prevTerm) //最后一段日志
-	return terms
 }
 
 // return currentTerm and whether this server
@@ -195,7 +160,10 @@ func (rf *Raft) GetState() (int, bool) {
 // that index. Raft should now trim its log as much as possible.
 func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	// Your code here (PartD).
-
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	rf.log.doSnapshot(index, snapshot)
+	rf.persistLocked()
 }
 
 // the service using Raft (e.g. a k/v server) wants to start
@@ -218,15 +186,15 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.role != Leader { //不是Leader，不能接收新的客户端命令
 		return 0, 0, false
 	}
-	rf.log = append(rf.log, LogEntry{
+	rf.log.append(LogEntry{
 		CommandValid: true,
 		Command:      command,
 		Term:         rf.currentTerm,
 	})
-	LOG(rf.me, rf.currentTerm, DLeader, "Leader accept log [%d]T%d", len(rf.log)-1, rf.currentTerm)
+	LOG(rf.me, rf.currentTerm, DLeader, "Leader accept log [%d]T%d", rf.log.size()-1, rf.currentTerm)
 	rf.persistLocked()
 
-	return len(rf.log) - 1, rf.currentTerm, true
+	return rf.log.size() - 1, rf.currentTerm, true
 }
 
 // the tester doesn't halt goroutines created by Raft after each test,
@@ -280,7 +248,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		避免访问日志时处理index == 0的边界情况
 		实际日志从索引1开始
 	*/
-	rf.log = append(rf.log, LogEntry{Term: InvalidTerm})
+	rf.log = NewLog(InvalidIndex, InvalidTerm, nil, nil)
 
 	rf.nextIndex = make([]int, len(rf.peers))
 	rf.matchIndex = make([]int, len(rf.peers))
