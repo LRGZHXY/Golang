@@ -18,6 +18,7 @@ package raft
 //
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -155,6 +156,28 @@ func (rf *Raft) firstLogFor(term int) int {
 		}
 	}
 	return InvalidIndex // 0 代表没找到
+}
+
+/*
+eg：Index: 0  1  2  3  4  5
+	Term:  1  1  2  2  2  3
+	-->  [0,1]T1[2,4]T2[5,5]T3  表示：日志索引0~1是任期1；2~4是任期2；5是任期3
+*/
+// logString 将日志按任期划分，压缩成字符串
+func (rf *Raft) logString() string {
+	var terms string
+	prevTerm := rf.log[0].Term //正在处理的日志的任期
+	prevStart := 0             //这段任期开始的索引
+	for i := 0; i < len(rf.log); i++ {
+		if rf.log[i].Term != prevTerm { //说明前一个任期结束了
+			terms += fmt.Sprintf("[%d,%d]T%d", prevStart, i-1, prevTerm)
+			//更新prevTerm和prevStart为当前日志项
+			prevTerm = rf.log[i].Term
+			prevStart = i
+		}
+	}
+	terms += fmt.Sprintf("[%d,%d]T%d", prevStart, len(rf.log)-1, prevTerm) //最后一段日志
+	return terms
 }
 
 // return currentTerm and whether this server

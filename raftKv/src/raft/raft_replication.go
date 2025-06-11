@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"fmt"
 	"sort"
 	"time"
 )
@@ -26,6 +27,16 @@ type AppendEntriesArgs struct {
 	LeaderCommit int //已经提交到状态机的最大日志索引
 }
 
+/*
+	Leader-2,T5,Prev:[10]T4,(10,13],CommitIdx:12
+	领导者id:2，任期:5，前一个日志索引及任期:[10]T4，本次追加日志索引范围(10,13]，领导者已提交的日志索引:12
+*/
+func (args *AppendEntriesArgs) String() string {
+	return fmt.Sprintf("Leader-%d,T%d,Prev:[%d]T%d,(%d,%d],CommitIdx:%d",
+		args.LeaderId, args.Term, args.PrevLogIndex, args.PrevLogTerm,
+		args.PrevLogIndex, args.PrevLogIndex+len(args.Entries), args.LeaderCommit)
+}
+
 type AppendEntriesReply struct {
 	Term    int  //跟随者任期
 	Success bool //表示跟随者是否成功接收日志条目（这里是心跳，所以可忽略）
@@ -34,10 +45,20 @@ type AppendEntriesReply struct {
 	ConfilictTerm  int
 }
 
+/*
+	T5,Success:false,ConflictTerm:[8]T3
+	跟随者任期:5，是否成功接收日志:false，冲突日志索引及任期:[8]T3
+*/
+func (reply *AppendEntriesReply) String() string {
+	return fmt.Sprintf("T%d,Success:%v,ConflictTerm:[%d]T%d",
+		reply.Term, reply.Success, reply.ConfilictIndex, reply.ConfilictTerm)
+}
+
 // 回调函数 AppendEntries 处理领导者对跟随者发送心跳或日志复制请求
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	LOG(rf.me, rf.currentTerm, DDebug, "<- S%d,Appended,Args=%v", args.LeaderId, args.String())
 
 	reply.Term = rf.currentTerm
 	reply.Success = false
@@ -50,7 +71,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.becomeFollowerLocked(args.Term)
 	}
 
-	defer rf.resetElectionTimerLocked() //重置选举计时器
+	defer func() {
+		rf.resetElectionTimerLocked() //重置选举计时器
+		if !reply.Success {
+			LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Follower Conflict:[%d]T%d", args.LeaderId, reply.ConfilictIndex, reply.ConfilictTerm)
+			LOG(rf.me, rf.currentTerm, DDebug, "<- S%d,Follower Log=%v", args.LeaderId, rf.logString())
+		}
+	}()
 
 	if args.PrevLogIndex >= len(rf.log) { //follower日志长度不够
 		reply.ConfilictTerm = InvalidTerm
@@ -113,6 +140,8 @@ func (rf *Raft) startReplication(term int) bool {
 			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Lost or crashed", peer)
 			return
 		}
+		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,Append,Reply=%v", peer, reply.String())
+
 		if reply.Term > rf.currentTerm {
 			rf.becomeFollowerLocked(reply.Term)
 			return
@@ -141,7 +170,9 @@ func (rf *Raft) startReplication(term int) bool {
 			if rf.nextIndex[peer] > prevIndex {
 				rf.nextIndex[peer] = prevIndex //保证nextIndex不会增加，只能保持或减小
 			}
-			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Not matched at %d,try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
+			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Not matched at Prev=[%d]T%d,Try next Prev=[%d]T%d",
+				peer, args.PrevLogIndex, rf.log[args.PrevLogIndex].Term, rf.nextIndex[peer]-1, rf.log[rf.nextIndex[peer]-1].Term) //
+			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,Leader log=%v", peer, rf.logString())
 			return
 		}
 
@@ -151,7 +182,7 @@ func (rf *Raft) startReplication(term int) bool {
 
 		// 更新commitIndex
 		majorityMatched := rf.getMajorityIndexLocked()
-		if majorityMatched > rf.commitIndex {
+		if majorityMatched > rf.commitIndex && rf.log[majorityMatched].Term == rf.currentTerm { //只能提交当前任期的日志
 			LOG(rf.me, rf.currentTerm, DApply, "Leader update the commit index %d->%d", rf.commitIndex, majorityMatched)
 			rf.commitIndex = majorityMatched
 			rf.applyCond.Signal()
@@ -181,7 +212,7 @@ func (rf *Raft) startReplication(term int) bool {
 			Entries:      rf.log[prevIdx+1:],
 			LeaderCommit: rf.commitIndex,
 		}
-		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, Send log, Prev=[%d]T%d, Len()=%d", peer, args.PrevLogIndex, args.PrevLogTerm, len(args.Entries)) ///
+		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, Append,Args=%v", peer, args.String())
 		go replicateToPeer(peer, args)
 	}
 	return true

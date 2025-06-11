@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -46,6 +47,14 @@ type RequestVoteArgs struct {
 	LastLogTerm  int //候选人最后一条日志的任期
 }
 
+/*
+	Candidate-3,T5,Last:[7]T4
+	候选人ID:3，当前任期:5，最后一条日志索引:7，任期:4
+*/
+func (args *RequestVoteArgs) String() string {
+	return fmt.Sprintf("Candidate-%d,T%d,Last:[%d]T%d", args.CandidateId, args.Term, args.LastLogIndex, args.LastLogTerm)
+}
+
 // example RequestVote RPC reply structure.
 // field names must start with capital letters!
 //投票回复参数
@@ -55,17 +64,26 @@ type RequestVoteReply struct {
 	VoteGranted bool //是否投票
 }
 
+/*
+	T4,VoteGranted:true
+	任期:4，是否投票:true
+*/
+func (reply *RequestVoteReply) String() string {
+	return fmt.Sprintf("T%d,VoteGranted:%v", reply.Term, reply.VoteGranted)
+}
+
 // example RequestVote RPC handler.
 // RequestVote 候选人请求投票
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (PartA, PartB).
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	LOG(rf.me, rf.currentTerm, DDebug, "<- S%d,VoteAsked,Args=%v", args.CandidateId, args.String())
 
 	reply.Term = rf.currentTerm
 	reply.VoteGranted = false
 	if args.Term < rf.currentTerm { //候选者任期<当前节点任期
-		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject voted,Higher term,T%d>T%d", args.CandidateId, rf.currentTerm, args.Term)
+		LOG(rf.me, rf.currentTerm, DVote, "<- S%d,Reject voted,Higher term,T%d>T%d", args.CandidateId, rf.currentTerm, args.Term)
 		return
 	}
 	if args.Term > rf.currentTerm {
@@ -73,12 +91,12 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	if rf.votedFor != -1 { //当前任期已经投过票
-		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject voted,Already voted to S%d", args.CandidateId, rf.votedFor)
+		LOG(rf.me, rf.currentTerm, DVote, "<- S%d,Reject voted,Already voted to S%d", args.CandidateId, rf.votedFor)
 		return
 	}
 
 	if rf.isMoreUpToDateLocked(args.LastLogIndex, args.LastLogTerm) { //候选人日志不如自己新，拒绝投票
-		LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Reject voted,Candidate's log less up-to-date", args.CandidateId)
+		LOG(rf.me, rf.currentTerm, DVote, "<- S%d,Reject voted,Candidate's log less up-to-date", args.CandidateId)
 		return
 	}
 
@@ -86,7 +104,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	rf.votedFor = args.CandidateId
 	rf.persistLocked()
 	rf.resetElectionTimerLocked()
-	LOG(rf.me, rf.currentTerm, DVote, "-> S%d,Vote granted", args.CandidateId)
+	LOG(rf.me, rf.currentTerm, DVote, "<- S%d,Vote granted", args.CandidateId)
 }
 
 // example code to send a RequestVote RPC to a server.
@@ -132,9 +150,10 @@ func (rf *Raft) startElection(term int) {
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
 		if !ok {
-			LOG(rf.me, rf.currentTerm, DDebug, "Ask vote from S%d,Lost or error", peer)
+			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,Ask vote from S%d,Lost or error", peer)
 			return
 		}
+		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,AskVote Reply=%v", peer, reply.String())
 
 		if reply.Term > rf.currentTerm { //对方任期更大，自己变成follower
 			rf.becomeFollowerLocked(reply.Term)
@@ -175,6 +194,7 @@ func (rf *Raft) startElection(term int) {
 			LastLogIndex: l - 1,
 			LastLogTerm:  rf.log[l-1].Term,
 		}
+		LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,AskVote,Args=%v", peer, args.String())
 		go askVoteFromPeer(peer, args) //向其他节点发出投票请求
 	}
 }
