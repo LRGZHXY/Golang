@@ -11,6 +11,10 @@ package raft
 
 import "sync"
 
+/*
+   持久化存储
+*/
+
 type Persister struct {
 	mu        sync.Mutex
 	raftstate []byte

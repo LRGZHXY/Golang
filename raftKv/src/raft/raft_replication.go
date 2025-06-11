@@ -29,15 +29,15 @@ type AppendEntriesArgs struct {
 type AppendEntriesReply struct {
 	Term    int  //跟随者任期
 	Success bool //表示跟随者是否成功接收日志条目（这里是心跳，所以可忽略）
+
+	ConfilictIndex int
+	ConfilictTerm  int
 }
 
 // 回调函数 AppendEntries 处理领导者对跟随者发送心跳或日志复制请求
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-
-	// For debug ///
-	LOG(rf.me, rf.currentTerm, DDebug, "<- S%d, Receive log, Prev=[%d]T%d, Len()=%d", args.LeaderId, args.PrevLogIndex, args.PrevLogTerm, len(args.Entries))
 
 	reply.Term = rf.currentTerm
 	reply.Success = false
@@ -50,33 +50,33 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.becomeFollowerLocked(args.Term)
 	}
 
+	defer rf.resetElectionTimerLocked() //重置选举计时器
+
 	if args.PrevLogIndex >= len(rf.log) { //follower日志长度不够
-		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Follower log too short,Len:%d <= Prev:%d", args.LeaderId, len(rf.log), args.PrevLogIndex)
+		reply.ConfilictTerm = InvalidTerm
+		//冲突索引：为了告诉Leader冲突日志任期从哪个位置开始，Leader可以直接回退到这个索引，提高同步效率
+		reply.ConfilictIndex = len(rf.log)
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Follower log too short,Len:%d < Prev:%d", args.LeaderId, len(rf.log), args.PrevLogIndex)
 		return
 	}
 	if rf.log[args.PrevLogIndex].Term != args.PrevLogTerm { //PrevLogIndex位置的日志项任期不一致
+		reply.ConfilictTerm = rf.log[args.PrevLogIndex].Term       //设置冲突任期为跟随者日志该位置的任期
+		reply.ConfilictIndex = rf.firstLogFor(reply.ConfilictTerm) //找到冲突任期第一次出现的日志索引
 		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Prev log not match,[%d]:T%d!=T%d", args.LeaderId, args.PrevLogIndex, rf.log[args.PrevLogIndex].Term, args.PrevLogTerm)
 		return
 	}
 
 	rf.log = append(rf.log[:args.PrevLogIndex+1], args.Entries...) //追加新日志（将Follower日志中匹配点之后的内容全部替换为Leader的内容）
+	rf.persistLocked()
 	reply.Success = true
 	LOG(rf.me, rf.currentTerm, DLog2, "Follower accept logs:(%d,%d]", args.PrevLogIndex, args.PrevLogIndex+len(args.Entries))
 
 	if args.LeaderCommit > rf.commitIndex {
 		LOG(rf.me, rf.currentTerm, DApply, "Follower update the commit index %d->%d", rf.commitIndex, args.LeaderCommit)
 		rf.commitIndex = args.LeaderCommit
-
-		//rf.log引范围是 [0, len(rf.log)-1]
-		if rf.commitIndex >= len(rf.log) {
-			rf.commitIndex = len(rf.log) - 1 //避免访问非法日志位置
-		} ///
-
 		//通知applicationTicker()线程：“日志有新提交了，可以把它们发给状态机了”
 		rf.applyCond.Signal() //唤醒应用线程
 	}
-
-	rf.resetElectionTimerLocked() //重置选举计时器
 }
 
 // sendAppendEntries 调用Raft.AppendEntries方法 向follower发送日志或心跳请求
@@ -125,11 +125,22 @@ func (rf *Raft) startReplication(term int) bool {
 		}
 
 		if !reply.Success { //日志不一致
-			idx, term := args.PrevLogIndex, args.PrevLogTerm
-			for idx > 0 && rf.log[idx].Term == term {
-				idx-- //往前找第一个与当前term不同的位置
+			prevIndex := rf.nextIndex[peer]         //下一条尝试发送给Follower的日志索引
+			if reply.ConfilictTerm == InvalidTerm { //Follower日志长度不够
+				rf.nextIndex[peer] = reply.ConfilictIndex //从冲突索引日志开始同步
+			} else {
+				firstIndex := rf.firstLogFor(reply.ConfilictTerm)
+				if firstIndex != InvalidIndex {
+					rf.nextIndex[peer] = firstIndex //Leader从第一次出现冲突任期的位置开始发送 ///
+				} else { //Leader日志里没有这个任期的日志
+					rf.nextIndex[peer] = reply.ConfilictIndex
+				}
 			}
-			rf.nextIndex[peer] = idx + 1
+
+			//nextIndex是往前回退，逐步减少索引，确保所有缺失或冲突的日志能被重新发送
+			if rf.nextIndex[peer] > prevIndex {
+				rf.nextIndex[peer] = prevIndex //保证nextIndex不会增加，只能保持或减小
+			}
 			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Not matched at %d,try next=%d", peer, args.PrevLogIndex, rf.nextIndex[peer])
 			return
 		}

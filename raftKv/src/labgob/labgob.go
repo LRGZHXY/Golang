@@ -15,6 +15,10 @@ import "sync"
 import "unicode"
 import "unicode/utf8"
 
+/*
+   gob 编码/解码
+*/
+
 var mu sync.Mutex
 var errorCount int // for TestCapital
 var checked map[reflect.Type]bool
