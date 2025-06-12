@@ -139,6 +139,7 @@ func (rl *RaftLog) String() string {
 }
 
 // doSnapshot 在生成快照后，截断已持久化的旧日志
+// App Layer -> Raft Layer
 // index: 本次快照所包含的最后一个日志条目的逻辑索引
 func (rl *RaftLog) doSnapshot(index int, snapshot []byte) {
 	idx := rl.idx(index)
@@ -153,5 +154,19 @@ func (rl *RaftLog) doSnapshot(index int, snapshot []byte) {
 		Term: rl.snapLastTerm, //添加dummy日志条目
 	})
 	newLog = append(newLog, rl.tailLog[idx+1:]...) //[index+1, last] 保留快照之后的日志
+	rl.tailLog = newLog
+}
+
+// Raft Layer -> App Layer
+// installSnapshot 更新快照相关状态
+func (rl *RaftLog) installSnapshot(index, term int, snapshot []byte) {
+	rl.snapLastIdx = index
+	rl.snapLastTerm = term
+	rl.snapshot = snapshot
+
+	newLog := make([]LogEntry, 0, 1)
+	newLog = append(newLog, LogEntry{
+		Term: rl.snapLastTerm, //添加dummy日志条目
+	})
 	rl.tailLog = newLog
 }

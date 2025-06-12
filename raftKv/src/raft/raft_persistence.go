@@ -34,10 +34,9 @@ func (rf *Raft) persistLocked() {
 	//持久化核心字段
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votedFor)
-	e.Encode(rf.log)
 	rf.log.persist(e)
 	raftstate := w.Bytes()
-	rf.persister.Save(raftstate, nil) //写入稳定存储
+	rf.persister.Save(raftstate, rf.log.snapshot) //写入稳定存储
 	LOG(rf.me, rf.currentTerm, DPersist, "Persist:%v", rf.persistString())
 }
 
@@ -80,6 +79,12 @@ func (rf *Raft) readPersist(data []byte) {
 	if err := rf.log.readPersist(d); err != nil {
 		LOG(rf.me, rf.currentTerm, DPersist, "Read log error:%v", err)
 		return
+	}
+	rf.log.snapshot = rf.persister.ReadSnapshot() //读取快照数据
+
+	if rf.log.snapLastIdx > rf.commitIndex { //防止对旧日志重复提交或应用
+		rf.commitIndex = rf.log.snapLastIdx
+		rf.lastApplied = rf.log.snapLastIdx
 	}
 	LOG(rf.me, rf.currentTerm, DPersist, "Read from persist:%v", rf.persistString())
 }

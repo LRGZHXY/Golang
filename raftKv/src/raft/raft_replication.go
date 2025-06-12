@@ -170,8 +170,14 @@ func (rf *Raft) startReplication(term int) bool {
 			if rf.nextIndex[peer] > prevIndex {
 				rf.nextIndex[peer] = prevIndex //保证nextIndex不会增加，只能保持或减小
 			}
+
+			nextPrevIndex := rf.nextIndex[peer] - 1
+			nextPrevTerm := InvalidTerm
+			if nextPrevIndex >= rf.log.snapLastIdx { //该索引是普通日志中的
+				nextPrevTerm = rf.log.at(nextPrevIndex).Term
+			}
 			LOG(rf.me, rf.currentTerm, DLog, "-> S%d,Not matched at Prev=[%d]T%d,Try next Prev=[%d]T%d",
-				peer, args.PrevLogIndex, args.PrevLogIndex, rf.nextIndex[peer]-1, rf.log.at(rf.nextIndex[peer]-1))
+				peer, args.PrevLogIndex, args.PrevLogTerm, nextPrevIndex, nextPrevTerm)
 			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d,Leader log=%v", peer, rf.log.String())
 			return
 		}
@@ -203,6 +209,18 @@ func (rf *Raft) startReplication(term int) bool {
 		}
 
 		prevIdx := rf.nextIndex[peer] - 1 //要发送日志的起始位置前的一个位置
+		if prevIdx < rf.log.snapLastIdx { // follower缺失的日志已经被leader压缩进快照了
+			args := &InstallSnapshotArgs{
+				Term:              rf.currentTerm,
+				LeaderId:          rf.me,
+				LastIncludedIndex: rf.log.snapLastIdx,
+				LastIncludedTerm:  rf.log.snapLastTerm,
+				Snapshot:          rf.log.snapshot,
+			}
+			LOG(rf.me, rf.currentTerm, DDebug, "-> S%d, SendSnap,Args=%v", peer, args.String())
+			go rf.installToPeer(peer, term, args) //发送快照
+			continue
+		}
 		prevTerm := rf.log.at(prevIdx).Term
 		args := &AppendEntriesArgs{
 			Term:         rf.currentTerm,

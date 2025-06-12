@@ -82,7 +82,7 @@ type Raft struct {
 	currentTerm int
 	votedFor    int //-1表示没有投过票
 
-	log *RaftLog //日志条目数组
+	log *RaftLog
 
 	//Leader独有视图字段
 	nextIndex  []int //下一条要发的日志索引
@@ -92,6 +92,7 @@ type Raft struct {
 	commitIndex int           //已提交的最大日志索引（所有提交的日志条目都已被多数派复制）
 	lastApplied int           //最后被应用到状态机的日志索引（已经对外生效的命令）
 	applyCh     chan ApplyMsg //将已经提交的日志条目推送给状态机的通道
+	snapPending bool          //是否在处理快照
 	applyCond   *sync.Cond    //让日志应用线程在没有新日志时能睡眠等待，避免空转浪费资源
 
 	electionStart   time.Time     //选举周期控制起始点
@@ -152,18 +153,6 @@ func (rf *Raft) GetState() (int, bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	return rf.currentTerm, rf.role == Leader
-}
-
-// the service says it has created a snapshot that has
-// all info up to and including index. this means the
-// service no longer needs the log through (and including)
-// that index. Raft should now trim its log as much as possible.
-func (rf *Raft) Snapshot(index int, snapshot []byte) {
-	// Your code here (PartD).
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-	rf.log.doSnapshot(index, snapshot)
-	rf.persistLocked()
 }
 
 // the service using Raft (e.g. a k/v server) wants to start
@@ -257,6 +246,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.commitIndex = 0
 	rf.lastApplied = 0
 	rf.applyCond = sync.NewCond(&rf.mu)
+	rf.snapPending = false
 
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
