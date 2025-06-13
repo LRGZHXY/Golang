@@ -6,6 +6,10 @@ import (
 	"fmt"
 )
 
+/*
+   持久化
+*/
+
 func (rf *Raft) persistString() string {
 	//将当前状态格式化为字符串
 	return fmt.Sprintf("T%d,VotedFor:%d,Log:[0:%d)", rf.currentTerm, rf.votedFor, rf.log.size())

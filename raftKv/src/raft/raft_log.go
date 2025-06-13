@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+/*
+   底层日志模块
+*/
+
 type RaftLog struct {
 	snapLastIdx  int
 	snapLastTerm int

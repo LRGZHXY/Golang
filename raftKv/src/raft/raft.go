@@ -1,5 +1,12 @@
 package raft
 
+import (
+	"course/labrpc"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
 //
 // this is an outline of the API that raft must expose to
 // the service (or tester). see comments below for
@@ -17,14 +24,9 @@ package raft
 //   in the same server.
 //
 
-import (
-	"sync"
-	"sync/atomic"
-	"time"
-
-	//	"course/labgob"
-	"course/labrpc"
-)
+/*
+	Raft结构体定义和一些公共逻辑
+*/
 
 const (
 	//超时上下界 250~400之间可以保证响应速度快，同时误判和冲突概率低

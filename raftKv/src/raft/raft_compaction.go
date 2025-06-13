@@ -2,6 +2,10 @@ package raft
 
 import "fmt"
 
+/*
+	日志压缩
+*/
+
 // the service says it has created a snapshot that has
 // all info up to and including index. this means the
 // service no longer needs the log through (and including)

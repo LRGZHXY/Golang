@@ -1,5 +1,9 @@
 package raft
 
+/*
+	日志应用
+*/
+
 // applicationTicker 将已经提交的日志应用到状态机 只有在commitIndex增大后才唤醒
 func (rf *Raft) applicationTicker() {
 	for !rf.killed() {
