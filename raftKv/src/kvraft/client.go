@@ -5,8 +5,7 @@ import "crypto/rand"
 import "math/big"
 
 type Clerk struct {
-	servers []*labrpc.ClientEnd
-	// You will have to modify this struct.
+	servers  []*labrpc.ClientEnd
 	leaderId int // 记录 Leader 节点的 id，避免下一次请求的时候去轮询查找 Leader
 	// clientID+seqId 确定一个唯一的命令
 	clientId int64
@@ -40,8 +39,8 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 // the types of args and reply (including whether they are pointers)
 // must match the declared types of the RPC handler function's
 // arguments. and reply must be passed as a pointer.
+// 获取当前key对应的value
 func (ck *Clerk) Get(key string) string {
-	// You will have to modify this function.
 	args := GetArgs{
 		Key: key,
 	}
@@ -67,8 +66,8 @@ func (ck *Clerk) Get(key string) string {
 // the types of args and reply (including whether they are pointers)
 // must match the declared types of the RPC handler function's
 // arguments. and reply must be passed as a pointer.
+// Put 和 Append 共用的方法
 func (ck *Clerk) PutAppend(key string, value string, op string) {
-	// You will have to modify this function.
 	args := PutAppendArgs{
 		Key:      key,
 		Value:    value,

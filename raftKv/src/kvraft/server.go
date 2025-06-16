@@ -26,8 +26,8 @@ type KVServer struct {
 	duplicateTable map[int64]LastOperationInfo
 }
 
+// Get 处理客户端Get请求
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
-	// Your code here.
 	// 调用 raft，将请求存储到 raft 日志中并进行同步
 	index, _, isLeader := kv.rf.Start(Op{Key: args.Key, OpType: OpGet})
 
@@ -37,9 +37,8 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 		return
 	}
 
-	// 等待结果
 	kv.mu.Lock()
-	notifyCh := kv.getNotifyChannel(index)
+	notifyCh := kv.getNotifyChannel(index) //应用层在该通道上发送操作结果
 	kv.mu.Unlock()
 
 	select {
@@ -52,7 +51,7 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 
 	go func() {
 		kv.mu.Lock()
-		kv.removeNotifyChannel(index)
+		kv.removeNotifyChannel(index) //删除通知的channel
 		kv.mu.Unlock()
 	}()
 }
@@ -62,9 +61,9 @@ func (kv *KVServer) requestDuplicated(clientId, seqId int64) bool {
 	return ok && seqId <= info.SeqId
 }
 
+// PutAppend 处理客户端Put或Append请求
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
-	// Your code here.
-	// 判断请求是否重复
+	// 判断请求是否重复（幂等性）
 	kv.mu.Lock()
 	if kv.requestDuplicated(args.ClientId, args.SeqId) {
 		// 如果是重复请求，直接返回结果
