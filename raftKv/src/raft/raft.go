@@ -32,7 +32,7 @@ const (
 	//超时上下界 250~400之间可以保证响应速度快，同时误判和冲突概率低
 	electionTimeoutMin time.Duration = 250 * time.Millisecond
 	electionTimeoutMax time.Duration = 400 * time.Millisecond
-	replicateInterval  time.Duration = 70 * time.Millisecond //小于electionTimeoutMin && 大于60
+	replicateInterval  time.Duration = 30 * time.Millisecond
 )
 
 const (
@@ -157,14 +157,12 @@ func (rf *Raft) GetState() (int, bool) {
 	return rf.currentTerm, rf.role == Leader
 }
 
-///
+// GetStateSize 获取持久化状态大小（字节数）
 func (rf *Raft) GetRaftStateSize() int {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	return rf.persister.RaftStateSize()
 }
-
-///
 
 // the service using Raft (e.g. a k/v server) wants to start
 // agreement on the next command to be appended to Raft's log. if this

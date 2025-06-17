@@ -203,7 +203,7 @@ func (kv *KVServer) applyTask() {
 					notifyCh <- opReply
 				}
 
-				// 判断是否需要 snapshot
+				// 判断是否需要snapshot
 				if kv.maxraftstate != -1 && kv.rf.GetRaftStateSize() >= kv.maxraftstate {
 					kv.makeSnapshot(message.CommandIndex)
 				}
@@ -247,6 +247,7 @@ func (kv *KVServer) removeNotifyChannel(index int) {
 	delete(kv.notifyChans, index)
 }
 
+// makeSnapshot 创建快照
 func (kv *KVServer) makeSnapshot(index int) {
 	buf := new(bytes.Buffer)
 	enc := labgob.NewEncoder(buf)
@@ -255,6 +256,7 @@ func (kv *KVServer) makeSnapshot(index int) {
 	kv.rf.Snapshot(index, buf.Bytes())
 }
 
+// restoreFromSnapshot 从快照中恢复状态
 func (kv *KVServer) restoreFromSnapshot(snapshot []byte) {
 	if len(snapshot) == 0 {
 		return
