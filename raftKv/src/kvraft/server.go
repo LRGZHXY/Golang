@@ -61,12 +61,11 @@ func (kv *KVServer) requestDuplicated(clientId, seqId int64) bool {
 	return ok && seqId <= info.SeqId
 }
 
-// PutAppend 处理客户端Put或Append请求
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// 判断请求是否重复（幂等性）
 	kv.mu.Lock()
 	if kv.requestDuplicated(args.ClientId, args.SeqId) {
-		// 如果是重复请求，直接返回结果
+		// 如果是重复请求，直接返回之前的结果
 		opReply := kv.duplicateTable[args.ClientId].Reply
 		reply.Err = opReply.Err
 		kv.mu.Unlock()
@@ -74,7 +73,7 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	}
 	kv.mu.Unlock()
 
-	// 调用 raft，将请求存储到 raft 日志中并进行同步
+	// 将请求存储到raft日志中并进行同步
 	index, _, isLeader := kv.rf.Start(Op{
 		Key:      args.Key,
 		Value:    args.Value,
@@ -168,7 +167,7 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 	return kv
 }
 
-// 处理 apply 任务
+// 处理apply任务
 func (kv *KVServer) applyTask() {
 	for !kv.killed() {
 		select {
@@ -198,7 +197,7 @@ func (kv *KVServer) applyTask() {
 					}
 				}
 
-				// 将结果发送回去
+				// 如果是 Leader，将结果发送回客户端
 				if _, isLeader := kv.rf.GetState(); isLeader {
 					notifyCh := kv.getNotifyChannel(message.CommandIndex)
 					notifyCh <- opReply
@@ -220,6 +219,7 @@ func (kv *KVServer) applyTask() {
 	}
 }
 
+// applyToStateMachine 将操作(Get/Put/Append)应用到状态机中
 func (kv *KVServer) applyToStateMachine(op Op) *OpReply {
 	var value string
 	var err Err
@@ -234,6 +234,7 @@ func (kv *KVServer) applyToStateMachine(op Op) *OpReply {
 	return &OpReply{Value: value, Err: err}
 }
 
+// getNotifyChannel 获取一个响应通道
 func (kv *KVServer) getNotifyChannel(index int) chan *OpReply {
 	if _, ok := kv.notifyChans[index]; !ok {
 		kv.notifyChans[index] = make(chan *OpReply, 1)
@@ -241,6 +242,7 @@ func (kv *KVServer) getNotifyChannel(index int) chan *OpReply {
 	return kv.notifyChans[index]
 }
 
+// removeNotifyChannel 删除响应通道
 func (kv *KVServer) removeNotifyChannel(index int) {
 	delete(kv.notifyChans, index)
 }
