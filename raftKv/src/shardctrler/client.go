@@ -12,8 +12,9 @@ type Clerk struct {
 	servers []*labrpc.ClientEnd
 	// Your data here.
 	leaderId int
+	// ClientId + SeqId 实现幂等性，避免重复执行
 	clientId int64
-	seqId    int64
+	seqId    int64 // 变更请求（Join、Leave、Move），seqId++
 }
 
 func nrand() int64 {
@@ -33,14 +34,15 @@ func MakeClerk(servers []*labrpc.ClientEnd) *Clerk {
 	return ck
 }
 
+// Query 查询最新的配置
 func (ck *Clerk) Query(num int) Config {
 	args := &QueryArgs{}
-	// Your code here.
 	args.Num = num
 	for {
 		// try each known server.
 		var reply QueryReply
 		ok := ck.servers[ck.leaderId].Call("ShardCtrler.Query", args, &reply)
+		// 请求失败，选择另一个节点重试
 		if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 			ck.leaderId = (ck.leaderId + 1) % len(ck.servers)
 			continue
@@ -49,9 +51,9 @@ func (ck *Clerk) Query(num int) Config {
 	}
 }
 
+// Join 添加新的Group
 func (ck *Clerk) Join(servers map[int][]string) {
 	args := &JoinArgs{ClientId: ck.clientId, SeqId: ck.seqId}
-	// Your code here.
 	args.Servers = servers
 
 	for {
@@ -66,9 +68,9 @@ func (ck *Clerk) Join(servers map[int][]string) {
 	}
 }
 
+// Leave 移除Group
 func (ck *Clerk) Leave(gids []int) {
 	args := &LeaveArgs{ClientId: ck.clientId, SeqId: ck.seqId}
-	// Your code here.
 	args.GIDs = gids
 
 	for {
@@ -84,9 +86,9 @@ func (ck *Clerk) Leave(gids []int) {
 	}
 }
 
+// Move 将shard移动到指定的group
 func (ck *Clerk) Move(shard int, gid int) {
 	args := &MoveArgs{ClientId: ck.clientId, SeqId: ck.seqId}
-	// Your code here.
 	args.Shard = shard
 	args.GID = gid
 

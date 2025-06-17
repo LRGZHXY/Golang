@@ -27,10 +27,20 @@ const NShards = 10
 
 // Config A configuration -- an assignment of shards to groups.
 // Please don't change this.
+
+/*
+	Shards = [2,2,1,1,1,3,3,3,3,3]
+              0 1 2 3 4 5 6 7 8 9
+	Groups = {
+    1: ["server1:port", "server2:port"], // group 1
+    2: ["server3:port", "server4:port"], // group 2
+    3: ["server5:port", "server6:port"], // group 3
+}
+*/
 type Config struct {
 	Num    int              // config number
-	Shards [NShards]int     // shard -> gid
-	Groups map[int][]string // gid -> servers[]
+	Shards [NShards]int     // shard -> gid,表示第i个shard属于哪个group
+	Groups map[int][]string // gid -> servers[],表示这个group是哪些服务器组成的
 }
 
 func DefaultConfig() Config {
