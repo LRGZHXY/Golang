@@ -12,14 +12,15 @@ func NewCtrlerStateMachine() *CtrlerStateMachine {
 	return cf
 }
 
+// Query 查询指定编号的配置
 func (csm *CtrlerStateMachine) Query(num int) (Config, Err) {
-	if num < 0 || num >= len(csm.Configs) {
+	if num < 0 || num >= len(csm.Configs) { //超出范围，返回最新的配置
 		return csm.Configs[len(csm.Configs)-1], OK
 	}
 	return csm.Configs[num], OK
 }
 
-// Join 加入新的 Group 到集群中，需要处理加入之后的负载均衡问题
+// Join 加入新的Group到集群中（需要处理加入之后的负载均衡问题）
 func (csm *CtrlerStateMachine) Join(groups map[int][]string) Err {
 	num := len(csm.Configs)
 	lastConfig := csm.Configs[num-1]
@@ -30,9 +31,9 @@ func (csm *CtrlerStateMachine) Join(groups map[int][]string) Err {
 		Groups: copyGroups(lastConfig.Groups),
 	}
 
-	// 将新的 Group 加入到 Groups 中
+	// 将新的Group加入到Groups中
 	for gid, servers := range groups {
-		if _, ok := newConfig.Groups[gid]; !ok {
+		if _, ok := newConfig.Groups[gid]; !ok { //不存在表示这是一个新加入的组
 			newServers := make([]string, len(servers))
 			copy(newServers, servers)
 			newConfig.Groups[gid] = newServers
@@ -52,7 +53,7 @@ func (csm *CtrlerStateMachine) Join(groups map[int][]string) Err {
 	//   2       [2, 3]
 	gidToShards := make(map[int][]int)
 	for gid := range newConfig.Groups {
-		gidToShards[gid] = make([]int, 0)
+		gidToShards[gid] = make([]int, 0) //初始化
 	}
 	for shard, gid := range newConfig.Shards {
 		gidToShards[gid] = append(gidToShards[gid], shard)
@@ -76,17 +77,24 @@ func (csm *CtrlerStateMachine) Join(groups map[int][]string) Err {
 	//    4	     [0, 1]
 	for {
 		maxGid, minGid := gidWithMaxShards(gidToShards), gidWithMinShards(gidToShards)
-		if maxGid != 0 && len(gidToShards[maxGid])-len(gidToShards[minGid]) <= 1 {
+		if maxGid != 0 && len(gidToShards[maxGid])-len(gidToShards[minGid]) <= 1 { //已经负载均衡
 			break
 		}
 
-		// 最少shard的 gid 增加一个 shard
+		// 最少shard的gid增加一个shard：maxGid中第一个shard移动给minGid
 		gidToShards[minGid] = append(gidToShards[minGid], gidToShards[maxGid][0])
-		// 最多shard的 gid 减少一个 shard
+		// 最多shard的gid减少一个shard
 		gidToShards[maxGid] = gidToShards[maxGid][1:]
 	}
 
-	// 得到新的gid -> shard 信息之后，存储到 shards 数组中
+	/*
+			gidToShards = {1: [0, 3, 6],2: [1, 4, 7],3: [2, 5, 8, 9]}
+
+			newShards = [1, 2, 3, 1, 2, 3, 1, 2, 3, 3]
+		                 ↑  ↑  ↑  ↑  ↑  ↑  ↑  ↑  ↑  ↑
+		       shard id: 0  1  2  3  4  5  6  7  8  9
+	*/
+	// 得到新的gid -> shard 信息之后，存储到shards数组中
 	var newShards [NShards]int
 	for gid, shards := range gidToShards {
 		for _, shard := range shards {
@@ -118,14 +126,16 @@ func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 		gidToShards[gid] = append(gidToShards[gid], shard)
 	}
 
-	// 删除对应的 gid，并且将对应的 shard 暂存起来
+	/////
+
+	// 删除对应的gid，并且将对应的shard暂存起来
 	var unassignedShards []int
 	for _, gid := range gids {
-		//	如果 gid 在 Group 中，则删除掉
+		//如果gid在Group中，则删除掉
 		if _, ok := newConfig.Groups[gid]; ok {
 			delete(newConfig.Groups, gid)
 		}
-		// 取出对应的 shard
+		// 取出对应的shard
 		if shards, ok := gidToShards[gid]; ok {
 			unassignedShards = append(unassignedShards, shards...)
 			delete(gidToShards, gid)
@@ -133,7 +143,7 @@ func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 	}
 
 	var newShards [NShards]int
-	// 重新分配被删除的 gid 对应的 shard
+	// 重新分配被删除的gid对应的shard
 	if len(newConfig.Groups) != 0 {
 		for _, shard := range unassignedShards {
 			minGid := gidWithMinShards(gidToShards)
@@ -154,6 +164,7 @@ func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 	return OK
 }
 
+// Move 将shard移动到指定的group中
 func (csm *CtrlerStateMachine) Move(shardid, gid int) Err {
 	num := len(csm.Configs)
 	lastConfig := csm.Configs[num-1]
@@ -169,28 +180,42 @@ func (csm *CtrlerStateMachine) Move(shardid, gid int) Err {
 	return OK
 }
 
+////
+
+// copyGroups 深拷贝
 func copyGroups(groups map[int][]string) map[int][]string {
 	newGroup := make(map[int][]string, len(groups))
 	for gid, servers := range groups {
 		newServers := make([]string, len(servers))
-		copy(newServers, servers)
+		copy(newServers, servers) //复制原来切片的内容
 		newGroup[gid] = newServers
 	}
 	return newGroup
 }
 
+// gitsWithMaxShards 找到拥有最多shard的gid
 func gidWithMaxShards(gidToShars map[int][]int) int {
+	/*
+		在系统初始化时，所有shard默认归属于gid == 0
+		 gidToShars := map[int][]int{0: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}}
+	*/
 	if shard, ok := gidToShars[0]; ok && len(shard) > 0 {
 		return 0
 	}
 
+	/*
+	   排序的作用：
+	   gidToShards := map[int][]int{ 3: {0, 1}, 1: {2, 3, 4}, 2: {5, 6, 7} }
+	   遍历顺序随机，可能是3 1 2，也可能是3 2 1，得到的最大值gid=1/gid=2
+	   排序后 gids = [1, 2, 3]，遍历顺序是固定的，得到最大值gid=1
+	*/
 	// 为了让每个节点在调用的时候获取到的配置是一样的
-	//	这里将 gid 进行排序，确保遍历的顺序是确定的
+	// 这里将 gid 进行排序，确保遍历的顺序是确定的
 	var gids []int
 	for gid := range gidToShars {
 		gids = append(gids, gid)
 	}
-	sort.Ints(gids)
+	sort.Ints(gids) //排序
 
 	maxGid, maxShards := -1, -1
 	for _, gid := range gids {
@@ -201,6 +226,7 @@ func gidWithMaxShards(gidToShars map[int][]int) int {
 	return maxGid
 }
 
+// gidWithMinShards 找到拥有最少shard的gid
 func gidWithMinShards(gidToShars map[int][]int) int {
 	var gids []int
 	for gid := range gidToShars {
@@ -210,7 +236,7 @@ func gidWithMinShards(gidToShars map[int][]int) int {
 
 	minGid, minShards := -1, NShards+1
 	for _, gid := range gids {
-		if gid != 0 && len(gidToShars[gid]) < minShards {
+		if gid != 0 && len(gidToShars[gid]) < minShards { //gid == 0通常表示未分配或无效组
 			minGid, minShards = gid, len(gidToShars[gid])
 		}
 	}
