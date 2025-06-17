@@ -86,6 +86,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d,Reject Log,Follower log too short,Len:%d < Prev:%d", args.LeaderId, rf.log.size(), args.PrevLogIndex)
 		return
 	}
+	if args.PrevLogIndex < rf.log.snapLastIdx { //Leader发的是已经快照丢弃的数据
+		reply.ConfilictTerm = rf.log.snapLastTerm
+		reply.ConfilictIndex = rf.log.snapLastIdx
+		LOG(rf.me, rf.currentTerm, DLog2, "<- S%d, Reject log, Follower log truncated in %d", args.LeaderId, rf.log.snapLastIdx)
+		return
+	}
 	if rf.log.at(args.PrevLogIndex).Term != args.PrevLogTerm { //PrevLogIndex位置的日志项任期不一致
 		reply.ConfilictTerm = rf.log.at(args.PrevLogIndex).Term     //设置冲突任期为跟随者日志该位置的任期
 		reply.ConfilictIndex = rf.log.firstFor(reply.ConfilictTerm) //找到冲突任期第一次出现的日志索引
