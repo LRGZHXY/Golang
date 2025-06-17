@@ -107,6 +107,7 @@ func (csm *CtrlerStateMachine) Join(groups map[int][]string) Err {
 	return OK
 }
 
+// Leave 移除Group（需要处理移除之后的负载均衡问题）
 func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 	num := len(csm.Configs)
 	lastConfig := csm.Configs[num-1]
@@ -126,9 +127,10 @@ func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 		gidToShards[gid] = append(gidToShards[gid], shard)
 	}
 
-	/////
-
 	// 删除对应的gid，并且将对应的shard暂存起来
+	/*
+		gidToShards = {1: [0, 1],2: [2, 3, 4],3: [5, 6, 7, 8, 9]}
+	*/
 	var unassignedShards []int
 	for _, gid := range gids {
 		//如果gid在Group中，则删除掉
@@ -137,7 +139,7 @@ func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 		}
 		// 取出对应的shard
 		if shards, ok := gidToShards[gid]; ok {
-			unassignedShards = append(unassignedShards, shards...)
+			unassignedShards = append(unassignedShards, shards...) // [5 6 7 8 9]
 			delete(gidToShards, gid)
 		}
 	}
@@ -148,6 +150,9 @@ func (csm *CtrlerStateMachine) Leave(gids []int) Err {
 		for _, shard := range unassignedShards {
 			minGid := gidWithMinShards(gidToShards)
 			gidToShards[minGid] = append(gidToShards[minGid], shard)
+			/*
+			   gidToShards = {1: [0, 1, 5, 6, 8],2: [2, 3, 4, 7, 9]}
+			*/
 		}
 
 		// 重新存储 shards 数组
@@ -175,12 +180,10 @@ func (csm *CtrlerStateMachine) Move(shardid, gid int) Err {
 		Groups: copyGroups(lastConfig.Groups),
 	}
 
-	newConfig.Shards[shardid] = gid
+	newConfig.Shards[shardid] = gid // eg: newConfig.Shards[3] = 5（第3号分片的归属变成group 5）
 	csm.Configs = append(csm.Configs, newConfig)
 	return OK
 }
-
-////
 
 // copyGroups 深拷贝
 func copyGroups(groups map[int][]string) map[int][]string {
