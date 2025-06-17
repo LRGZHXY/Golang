@@ -187,9 +187,9 @@ func (kv *KVServer) applyTask() {
 				if op.OpType != OpGet && kv.requestDuplicated(op.ClientId, op.SeqId) {
 					opReply = kv.duplicateTable[op.ClientId].Reply
 				} else {
-					// 将操作应用状态机中
+					// 将操作应用到状态机中
 					opReply = kv.applyToStateMachine(op)
-					if op.OpType != OpGet {
+					if op.OpType != OpGet { //针对Put/Append操作，记录去重表(get操作不用去重)
 						kv.duplicateTable[op.ClientId] = LastOperationInfo{
 							SeqId: op.SeqId,
 							Reply: opReply,
