@@ -117,11 +117,11 @@ type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
-	Servers  map[int][]string // new GID -> servers mappings  -- for Join
-	GIDs     []int            // -- for Leave
-	Shard    int              // -- for Move
-	GID      int              // -- for Move
-	Num      int              // desired config number -- for Query
+	Servers  map[int][]string // Join
+	GIDs     []int            // Leave 要移除的group ID列表
+	Shard    int              // Move 指定要移动的shard编号
+	GID      int              // Move 目标group ID，把Shard移动到这个group
+	Num      int              // Query
 	OpType   OperationType
 	ClientId int64
 	SeqId    int64

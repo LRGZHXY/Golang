@@ -15,8 +15,6 @@ type ShardCtrler struct {
 	rf      *raft.Raft
 	applyCh chan raft.ApplyMsg
 
-	// Your data here.
-
 	configs []Config // indexed by config num
 
 	dead           int32 // set by Kill()
@@ -32,39 +30,36 @@ func (sc *ShardCtrler) requestDuplicated(clientId, seqId int64) bool {
 }
 
 func (sc *ShardCtrler) Join(args *JoinArgs, reply *JoinReply) {
-	// Your code here.
 	var opReply OpReply
 	sc.command(Op{
 		OpType:   OpJoin,
 		ClientId: args.ClientId,
 		SeqId:    args.SeqId,
-		Servers:  args.Servers,
+		Servers:  args.Servers, //将新的group（由若干台服务器组成）加入系统
 	}, &opReply)
 
 	reply.Err = opReply.Err
 }
 
 func (sc *ShardCtrler) Leave(args *LeaveArgs, reply *LeaveReply) {
-	// Your code here.
 	var opReply OpReply
 	sc.command(Op{
 		OpType:   OpLeave,
 		ClientId: args.ClientId,
 		SeqId:    args.SeqId,
-		GIDs:     args.GIDs,
+		GIDs:     args.GIDs, //将指定GID的group从系统中移除
 	}, &opReply)
 
 	reply.Err = opReply.Err
 }
 
 func (sc *ShardCtrler) Move(args *MoveArgs, reply *MoveReply) {
-	// Your code here.
 	var opReply OpReply
 	sc.command(Op{
 		OpType:   OpMove,
 		ClientId: args.ClientId,
 		SeqId:    args.SeqId,
-		Shard:    args.Shard,
+		Shard:    args.Shard, //将shard分配给指定的group
 		GID:      args.GID,
 	}, &opReply)
 
@@ -72,17 +67,17 @@ func (sc *ShardCtrler) Move(args *MoveArgs, reply *MoveReply) {
 }
 
 func (sc *ShardCtrler) Query(args *QueryArgs, reply *QueryReply) {
-	// Your code here.
 	var opReply OpReply
 	sc.command(Op{
 		OpType: OpQuery,
-		Num:    args.Num,
+		Num:    args.Num, //查询某一编号的配置
 	}, &opReply)
 
 	reply.Config = opReply.ControllerConfig
 	reply.Err = opReply.Err
 }
 
+// command 将操作提交给Raft，等待其被应用到状态机
 func (sc *ShardCtrler) command(args Op, reply *OpReply) {
 	sc.mu.Lock()
 	if args.OpType != OpQuery && sc.requestDuplicated(args.ClientId, args.SeqId) {
@@ -94,7 +89,7 @@ func (sc *ShardCtrler) command(args Op, reply *OpReply) {
 	}
 	sc.mu.Unlock()
 
-	// 调用 raft，将请求存储到 raft 日志中并进行同步
+	// 将请求存储到 raft 日志中并进行同步
 	index, _, isLeader := sc.rf.Start(args)
 	// 如果不是 Leader 的话，直接返回错误
 	if !isLeader {
@@ -115,7 +110,7 @@ func (sc *ShardCtrler) command(args Op, reply *OpReply) {
 		reply.Err = ErrTimeout
 	}
 
-	// 删除通知的 channel
+	// 删除通知的channel
 	go func() {
 		sc.mu.Lock()
 		sc.removeNotifyChannel(index)
@@ -169,7 +164,7 @@ func StartServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister)
 	return sc
 }
 
-// 处理 apply 任务
+// 处理apply任务
 func (sc *ShardCtrler) applyTask() {
 	for !sc.killed() {
 		select {
@@ -199,7 +194,7 @@ func (sc *ShardCtrler) applyTask() {
 					}
 				}
 
-				// 将结果发送回去
+				// 将结果发送回客户端
 				if _, isLeader := sc.rf.GetState(); isLeader {
 					notifyCh := sc.getNotifyChannel(message.CommandIndex)
 					notifyCh <- opReply
