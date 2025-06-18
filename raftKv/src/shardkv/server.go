@@ -33,8 +33,7 @@ type ShardKV struct {
 }
 
 func (kv *ShardKV) Get(args *GetArgs, reply *GetReply) {
-	// Your code here.
-	// 判断请求 key 是否属于当前 Group
+	// 判断请求key是否属于当前Group
 	kv.mu.Lock()
 	if !kv.matchGroup(args.Key) {
 		reply.Err = ErrWrongGroup
@@ -43,13 +42,13 @@ func (kv *ShardKV) Get(args *GetArgs, reply *GetReply) {
 	}
 	kv.mu.Unlock()
 
-	// 调用 raft，将请求存储到 raft 日志中并进行同步
+	// 调用raft，将请求存储到raft日志中并进行同步
 	index, _, isLeader := kv.rf.Start(RaftCommand{
 		ClientOpeartion,
 		Op{Key: args.Key, OpType: OpGet},
 	})
 
-	// 如果不是 Leader 的话，直接返回错误
+	// 如果不是Leader的话，直接返回错误
 	if !isLeader {
 		reply.Err = ErrWrongLeader
 		return
@@ -75,22 +74,23 @@ func (kv *ShardKV) Get(args *GetArgs, reply *GetReply) {
 	}()
 }
 
+// matchGroup 判断请求key是否属于当前Group
 func (kv *ShardKV) matchGroup(key string) bool {
 	shard := key2shard(key)
 	shardStatus := kv.shards[shard].Status
 	return kv.currentConfig.Shards[shard] == kv.gid && (shardStatus == Normal || shardStatus == GC)
 }
 
+// requestDuplicated 判断请求是否重复
 func (kv *ShardKV) requestDuplicated(clientId, seqId int64) bool {
 	info, ok := kv.duplicateTable[clientId]
 	return ok && seqId <= info.SeqId
 }
 
 func (kv *ShardKV) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
-	// Your code here.
 	kv.mu.Lock()
 
-	// 判断请求 key 是否所属当前 Group
+	// 判断请求key是否所属当前Group
 	if !kv.matchGroup(args.Key) {
 		reply.Err = ErrWrongGroup
 		kv.mu.Unlock()
@@ -107,7 +107,7 @@ func (kv *ShardKV) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	}
 	kv.mu.Unlock()
 
-	// 调用 raft，将请求存储到 raft 日志中并进行同步
+	// 调用raft，将请求存储到raft日志中并进行同步
 	index, _, isLeader := kv.rf.Start(RaftCommand{
 		ClientOpeartion,
 		Op{
@@ -119,7 +119,7 @@ func (kv *ShardKV) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 		},
 	})
 
-	// 如果不是 Leader 的话，直接返回错误
+	// 如果不是Leader的话，直接返回错误
 	if !isLeader {
 		reply.Err = ErrWrongLeader
 		return
@@ -137,7 +137,7 @@ func (kv *ShardKV) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 		reply.Err = ErrTimeout
 	}
 
-	// 删除通知的 channel
+	// 删除通知的channel
 	go func() {
 		kv.mu.Lock()
 		kv.removeNotifyChannel(index)
@@ -246,6 +246,7 @@ func (kv *ShardKV) applyToStateMachine(op Op, shardId int) *OpReply {
 	return &OpReply{Value: value, Err: err}
 }
 
+// getOperationType 创建通知channel
 func (kv *ShardKV) getNotifyChannel(index int) chan *OpReply {
 	if _, ok := kv.notifyChans[index]; !ok {
 		kv.notifyChans[index] = make(chan *OpReply, 1)
@@ -253,10 +254,12 @@ func (kv *ShardKV) getNotifyChannel(index int) chan *OpReply {
 	return kv.notifyChans[index]
 }
 
+// removeNotifyChannel 删除通知的channel
 func (kv *ShardKV) removeNotifyChannel(index int) {
 	delete(kv.notifyChans, index)
 }
 
+// makeSnapshot 创建快照
 func (kv *ShardKV) makeSnapshot(index int) {
 	buf := new(bytes.Buffer)
 	enc := labgob.NewEncoder(buf)
@@ -267,6 +270,7 @@ func (kv *ShardKV) makeSnapshot(index int) {
 	kv.rf.Snapshot(index, buf.Bytes())
 }
 
+// restoreFromSnapshot 从快照中恢复状态
 func (kv *ShardKV) restoreFromSnapshot(snapshot []byte) {
 	if len(snapshot) == 0 {
 		for i := 0; i < shardctrler.NShards; i++ {

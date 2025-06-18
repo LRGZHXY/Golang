@@ -17,6 +17,7 @@ import "time"
 // which shard is a key in?
 // please use this function,
 // and please do not change it.
+// key2shard 返回key所在的shard
 func key2shard(key string) int {
 	shard := 0
 	if len(key) > 0 {
@@ -66,34 +67,33 @@ func MakeClerk(ctrlers []*labrpc.ClientEnd, make_end func(string) *labrpc.Client
 // returns "" if the key does not exist.
 // keeps trying forever in the face of all other errors.
 // You will have to modify this function.
+// Get 获取key对应的value
 func (ck *Clerk) Get(key string) string {
 	args := GetArgs{}
 	args.Key = key
 
 	for {
-		shard := key2shard(key)
-		gid := ck.config.Shards[shard]
+		shard := key2shard(key)        //获取key所在的shard
+		gid := ck.config.Shards[shard] //获取shard对应的group ID
 		if servers, ok := ck.config.Groups[gid]; ok {
-			// try each server for the shard.
 			if _, exist := ck.leaderIds[gid]; !exist {
-				ck.leaderIds[gid] = 0
+				ck.leaderIds[gid] = 0 //没有记录，初始化为0，从group中的第一个服务器开始尝试
 			}
 			oldLeaderId := ck.leaderIds[gid]
 
 			for {
 				srv := ck.make_end(servers[ck.leaderIds[gid]])
 				var reply GetReply
-				ok := srv.Call("ShardKV.Get", &args, &reply)
+				ok := srv.Call("ShardKV.Get", &args, &reply) //发起get请求
 				if ok && (reply.Err == OK || reply.Err == ErrNoKey) {
 					return reply.Value
 				}
 				if ok && (reply.Err == ErrWrongGroup) {
 					break
 				}
-				// ... not ok, or ErrWrongLeader
 				if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 					ck.leaderIds[gid] = (ck.leaderIds[gid] + 1) % len(servers)
-					if ck.leaderIds[gid] == oldLeaderId {
+					if ck.leaderIds[gid] == oldLeaderId { //尝试完该group的所有服务器
 						break
 					}
 					continue
@@ -101,14 +101,14 @@ func (ck *Clerk) Get(key string) string {
 			}
 		}
 		time.Sleep(100 * time.Millisecond)
-		// ask controler for the latest configuration.
-		ck.config = ck.sm.Query(-1)
+		ck.config = ck.sm.Query(-1) //获取最新的配置
 	}
 }
 
 // PutAppend shared by Put and Append.
 // You will have to modify this function.
 func (ck *Clerk) PutAppend(key string, value string, op string) {
+	//构造请求参数
 	args := PutAppendArgs{
 		ClientId: ck.clientId,
 		SeqId:    ck.seqId,
@@ -121,6 +121,7 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 		shard := key2shard(key)
 		gid := ck.config.Shards[shard]
 		if servers, ok := ck.config.Groups[gid]; ok {
+			//初始化Leader猜测
 			if _, exist := ck.leaderIds[gid]; !exist {
 				ck.leaderIds[gid] = 0
 			}
@@ -129,18 +130,17 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 			for {
 				srv := ck.make_end(servers[ck.leaderIds[gid]])
 				var reply PutAppendReply
-				ok := srv.Call("ShardKV.PutAppend", &args, &reply)
+				ok := srv.Call("ShardKV.PutAppend", &args, &reply) //发起请求
 				if ok && reply.Err == OK {
 					ck.seqId++
 					return
 				}
-				if ok && reply.Err == ErrWrongGroup {
+				if ok && reply.Err == ErrWrongGroup { //当前server不再是该分片的负责者
 					break
 				}
-				// ... not ok, or ErrWrongLeader
 				if !ok || reply.Err == ErrWrongLeader || reply.Err == ErrTimeout {
 					ck.leaderIds[gid] = (ck.leaderIds[gid] + 1) % len(servers)
-					if ck.leaderIds[gid] == oldLeaderId {
+					if ck.leaderIds[gid] == oldLeaderId { //尝试完该group的所有服务器
 						break
 					}
 					continue
@@ -148,8 +148,7 @@ func (ck *Clerk) PutAppend(key string, value string, op string) {
 			}
 		}
 		time.Sleep(100 * time.Millisecond)
-		// ask controler for the latest configuration.
-		ck.config = ck.sm.Query(-1)
+		ck.config = ck.sm.Query(-1) //获取最新的配置
 	}
 }
 
