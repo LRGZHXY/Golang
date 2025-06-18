@@ -55,7 +55,7 @@ func (kv *ShardKV) applyTask() {
 func (kv *ShardKV) fetchConfigTask() {
 	for !kv.killed() {
 		if _, isLeader := kv.rf.GetState(); isLeader {
-			needFetch := true
+			needFetch := true //需要拉取配置
 			kv.mu.Lock()
 			// 如果有shard的状态是非Normal的，则说明前一个配置变更的任务正在进行中
 			for _, shard := range kv.shards {
